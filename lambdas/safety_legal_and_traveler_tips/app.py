@@ -1,9 +1,5 @@
 import json
-import os
 import boto3
-from flask import Flask, request, Response, stream_with_context
-
-app = Flask(__name__)
 
 BEDROCK_MODEL_ID = "global.anthropic.claude-sonnet-4-6-20260217-v1:0"
 bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
@@ -32,8 +28,8 @@ Provide:
 **TRAVELER GROUP-SPECIFIC TIPS:**
 For Students: Budget safety tips, student discounts and ID benefits, hostel safety
 For Adults: General precautions, nightlife safety
-For Seniors: Medical facilities nearby, mobility considerations, slower-paced activities
-For Families with Kids: Child safety in public places, kid-friendly facilities, emergency pediatric care
+For Seniors: Medical facilities nearby, mobility considerations
+For Families with Kids: Child safety in public places, kid-friendly facilities
 For Mixed Groups: Coordination tips, inclusive planning
 
 **CULTURAL ETIQUETTE:**
@@ -47,23 +43,18 @@ For Mixed Groups: Coordination tips, inclusive planning
 
 Format with clear sections and bullet points. Be practical and respectful."""
 
-
-def build_cors_headers():
-    return {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "POST,OPTIONS",
-    }
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
 
 
-@app.route("/", methods=["OPTIONS"])
-def options():
-    return Response("", status=200, headers=build_cors_headers())
+def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
 
-
-@app.route("/", methods=["POST"])
-def generate():
-    body = request.get_json(force=True)
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     traveler_group = body.get("traveler_group", "Adult")
@@ -82,8 +73,8 @@ def generate():
 
 Please provide essential safety, legal, and traveler tips."""
 
-    def stream():
-        response = bedrock.invoke_model_with_response_stream(
+    try:
+        response = bedrock.invoke_model(
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
@@ -92,16 +83,17 @@ Please provide essential safety, legal, and traveler tips."""
                 "messages": [{"role": "user", "content": user_message}],
             }),
         )
-        for event in response["body"]:
-            chunk = json.loads(event["chunk"]["bytes"])
-            if chunk["type"] == "content_block_delta":
-                yield chunk["delta"].get("text", "")
+        result = json.loads(response["body"].read())
+        text = result["content"][0]["text"]
 
-    headers = build_cors_headers()
-    headers["Content-Type"] = "text/plain; charset=utf-8"
-    return Response(stream_with_context(stream()), headers=headers)
-
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8080))
-    app.run(host="0.0.0.0", port=port)
+        return {
+            "statusCode": 200,
+            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "body": text,
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "headers": CORS_HEADERS,
+            "body": json.dumps({"error": str(e)}),
+        }

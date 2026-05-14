@@ -371,18 +371,19 @@
 // ============================================================
 // URL Placeholders (replaced by GitHub Actions during deploy)
 // ============================================================
-const STREAM_URLS = {
-    budget_analysis_and_recommendations: '__URL_BUDGET_ANALYSIS_AND_RECOMMENDATIONS__',
-    travel_overview: '__URL_TRAVEL_OVERVIEW__',
-    transport_and_accessibility: '__URL_TRANSPORT_AND_ACCESSIBILITY__',
-    government_services_and_entry_requirements: '__URL_GOVERNMENT_SERVICES_AND_ENTRY_REQUIREMENTS__',
-    estimated_cost_breakdown: '__URL_ESTIMATED_COST_BREAKDOWN__',
-    detailed_itinerary: '__URL_DETAILED_ITINERARY__',
-    government_travel_subsidies_and_benefits: '__URL_GOVERNMENT_TRAVEL_SUBSIDIES_AND_BENEFITS__',
-    safety_legal_and_traveler_tips: '__URL_SAFETY_LEGAL_AND_TRAVELER_TIPS__',
-    chat_with_local_malaysian_friend: '__URL_CHAT_WITH_LOCAL_MALAYSIAN_FRIEND__',
+const API_BASE = '__API_URL__';
+const ENDPOINTS = {
+    budget_analysis_and_recommendations: API_BASE + '/budget-analysis',
+    travel_overview: API_BASE + '/travel-overview',
+    transport_and_accessibility: API_BASE + '/transport',
+    government_services_and_entry_requirements: API_BASE + '/government-services',
+    estimated_cost_breakdown: API_BASE + '/cost-breakdown',
+    detailed_itinerary: API_BASE + '/itinerary',
+    government_travel_subsidies_and_benefits: API_BASE + '/subsidies',
+    safety_legal_and_traveler_tips: API_BASE + '/safety-tips',
+    chat_with_local_malaysian_friend: API_BASE + '/chat',
+    image: API_BASE + '/image',
 };
-const DIAGRAM_API = '__DIAGRAM_API_URL__';
 
 // ============================================================
 // Gather user inputs
@@ -441,7 +442,7 @@ function renderTableRow(line) {
 // ============================================================
 // Streaming fetch helper
 // ============================================================
-async function streamToPanel(url, body, panelId, spinnerId) {
+async function fetchToPanel(url, body, panelId, spinnerId) {
     const panel = document.getElementById(panelId);
     const spinner = document.getElementById(spinnerId);
     panel.innerHTML = '';
@@ -456,50 +457,25 @@ async function streamToPanel(url, body, panelId, spinnerId) {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = '';
+        const text = await response.text();
+        const lines = text.split('\n');
         let tableOpen = false;
 
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            buffer += decoder.decode(value, { stream: true });
-
-            const lines = buffer.split('\n');
-            buffer = lines.pop();
-
-            for (const line of lines) {
-                const rendered = renderMarkdownLine(line);
-                if (!rendered) continue;
-                if (rendered.startsWith('<tr>') && !tableOpen) {
-                    panel.innerHTML += '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
-                    tableOpen = true;
-                }
-                if (!rendered.startsWith('<tr>') && tableOpen) {
-                    panel.innerHTML += '</table>';
-                    tableOpen = false;
-                }
-                const span = document.createElement('span');
-                span.className = 'md-line';
-                span.innerHTML = rendered;
-                panel.appendChild(span);
-                panel.scrollTop = panel.scrollHeight;
+        for (const line of lines) {
+            const rendered = renderMarkdownLine(line);
+            if (!rendered) continue;
+            if (rendered.startsWith('<tr>') && !tableOpen) {
+                panel.innerHTML += '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
+                tableOpen = true;
             }
-        }
-        // Flush remaining buffer
-        if (buffer.trim()) {
-            const rendered = renderMarkdownLine(buffer);
-            if (rendered) {
-                if (rendered.startsWith('<tr>') && !tableOpen) {
-                    panel.innerHTML += '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
-                    tableOpen = true;
-                }
-                const span = document.createElement('span');
-                span.className = 'md-line';
-                span.innerHTML = rendered;
-                panel.appendChild(span);
+            if (!rendered.startsWith('<tr>') && tableOpen) {
+                panel.innerHTML += '</table>';
+                tableOpen = false;
             }
+            const span = document.createElement('span');
+            span.className = 'md-line';
+            span.innerHTML = rendered;
+            panel.appendChild(span);
         }
         if (tableOpen) panel.innerHTML += '</table>';
     } catch (err) {
@@ -519,7 +495,7 @@ async function generateImage(inputs) {
     spinner.style.display = 'block';
 
     try {
-        const response = await fetch(DIAGRAM_API + '/image', {
+        const response = await fetch(ENDPOINTS.image, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -550,14 +526,14 @@ function runAll() {
 
     const tasks = [
         generateImage(inputs),
-        streamToPanel(STREAM_URLS.budget_analysis_and_recommendations, inputs, 'output-budget', 'spinner-budget'),
-        streamToPanel(STREAM_URLS.travel_overview, inputs, 'output-overview', 'spinner-overview'),
-        streamToPanel(STREAM_URLS.transport_and_accessibility, inputs, 'output-transport', 'spinner-transport'),
-        streamToPanel(STREAM_URLS.government_services_and_entry_requirements, inputs, 'output-government', 'spinner-government'),
-        streamToPanel(STREAM_URLS.estimated_cost_breakdown, inputs, 'output-cost', 'spinner-cost'),
-        streamToPanel(STREAM_URLS.detailed_itinerary, inputs, 'output-itinerary', 'spinner-itinerary'),
-        streamToPanel(STREAM_URLS.government_travel_subsidies_and_benefits, inputs, 'output-subsidies', 'spinner-subsidies'),
-        streamToPanel(STREAM_URLS.safety_legal_and_traveler_tips, inputs, 'output-safety', 'spinner-safety'),
+        fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations, inputs, 'output-budget', 'spinner-budget'),
+        fetchToPanel(ENDPOINTS.travel_overview, inputs, 'output-overview', 'spinner-overview'),
+        fetchToPanel(ENDPOINTS.transport_and_accessibility, inputs, 'output-transport', 'spinner-transport'),
+        fetchToPanel(ENDPOINTS.government_services_and_entry_requirements, inputs, 'output-government', 'spinner-government'),
+        fetchToPanel(ENDPOINTS.estimated_cost_breakdown, inputs, 'output-cost', 'spinner-cost'),
+        fetchToPanel(ENDPOINTS.detailed_itinerary, inputs, 'output-itinerary', 'spinner-itinerary'),
+        fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits, inputs, 'output-subsidies', 'spinner-subsidies'),
+        fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips, inputs, 'output-safety', 'spinner-safety'),
     ];
 
     Promise.allSettled(tasks).then(() => {
@@ -599,7 +575,7 @@ async function sendChat() {
     const state = document.getElementById('state').value;
 
     try {
-        const response = await fetch(STREAM_URLS.chat_with_local_malaysian_friend, {
+        const response = await fetch(ENDPOINTS.chat_with_local_malaysian_friend, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -611,18 +587,9 @@ async function sendChat() {
 
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullReply = '';
-
-        while (true) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            const chunk = decoder.decode(value, { stream: true });
-            fullReply += chunk;
-            assistantBubble.innerHTML = formatInline(fullReply.replace(/\n/g, '<br>'));
-            messagesDiv.scrollTop = messagesDiv.scrollHeight;
-        }
+        const fullReply = await response.text();
+        assistantBubble.innerHTML = formatInline(fullReply.replace(/\n/g, '<br>'));
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
 
         chatHistory.push({ role: 'assistant', content: fullReply });
     } catch (err) {
