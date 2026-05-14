@@ -2,7 +2,7 @@ import json
 import random
 import boto3
 
-bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
+bedrock = boto3.client("bedrock-runtime", region_name="us-west-2")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
@@ -37,7 +37,6 @@ def handler(event, context):
 
     seed = random.randint(0, 2147483647)
 
-    # Use Stability SD3.5 Large format
     request_body = json.dumps({
         "prompt": prompt,
         "mode": "text-to-image",
@@ -48,7 +47,7 @@ def handler(event, context):
 
     try:
         response = bedrock.invoke_model(
-            modelId="stability.sd3-5-large-v1:0",
+            modelId="stability.stable-image-core-v1:1",
             body=request_body,
             accept="application/json",
             contentType="application/json",
