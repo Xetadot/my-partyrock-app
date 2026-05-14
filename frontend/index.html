@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Travel Malaysia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0d1b2a 0%, #1b2838 100%);
+            color: #e0e0e0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header {
+            text-align: center;
+            padding: 30px 0;
+            border-bottom: 2px solid #1e88e5;
+            margin-bottom: 30px;
+        }
+        header h1 {
+            font-size: 2.2rem;
+            color: #64b5f6;
+            margin-bottom: 10px;
+        }
+        header p { color: #90a4ae; font-size: 1rem; max-width: 800px; margin: 0 auto; }
+        .input-section {
+            background: #1a2332;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border: 1px solid #2a3a4a;
+        }
+        .input-section h2 { color: #64b5f6; margin-bottom: 20px; font-size: 1.3rem; }
+        .input-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+        }
+        .input-group { display: flex; flex-direction: column; }
+        .input-group label {
+            font-size: 0.85rem;
+            color: #90a4ae;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        .input-group select,
+        .input-group input,
+        .input-group textarea {
+            background: #0d1b2a;
+            border: 1px solid #2a3a4a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            transition: border-color 0.3s;
+        }
+        .input-group select:focus,
+        .input-group input:focus,
+        .input-group textarea:focus {
+            outline: none;
+            border-color: #1e88e5;
+        }
+        .btn-run-all {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            margin: 20px auto;
+            padding: 14px 30px;
+            background: linear-gradient(135deg, #1e88e5, #1565c0);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .btn-run-all:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(30,136,229,0.4); }
+        .btn-run-all:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .output-section { margin-bottom: 25px; }
+        .output-panel {
+            background: #1a2332;
+            border-radius: 12px;
+            border: 1px solid #2a3a4a;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        .output-panel-header {
+            background: #0d1b2a;
+            padding: 12px 20px;
+            border-bottom: 1px solid #2a3a4a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .output-panel-header h3 { color: #64b5f6; font-size: 1rem; }
+        .output-panel-body {
+            padding: 20px;
+            height: 340px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .output-panel-body.auto-height { height: auto; min-height: 200px; }
+        .output-panel-body::-webkit-scrollbar { width: 6px; }
+        .output-panel-body::-webkit-scrollbar-track { background: #0d1b2a; }
+        .output-panel-body::-webkit-scrollbar-thumb { background: #2a3a4a; border-radius: 3px; }
+        .spinner {
+            display: none;
+            width: 20px; height: 20px;
+            border: 2px solid #2a3a4a;
+            border-top: 2px solid #1e88e5;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .error-msg { color: #ef5350; font-style: italic; }
+        .md-line { display: block; animation: fadeIn 0.3s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .cursor-blink {
+            display: inline-block;
+            width: 2px; height: 1em;
+            background: #64b5f6;
+            animation: blink 1s step-end infinite;
+            vertical-align: text-bottom;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+        .image-panel { text-align: center; }
+        .image-panel img { max-width: 100%; max-height: 500px; border-radius: 8px; }
+        /* Chat styles */
+        .chat-container { display: flex; flex-direction: column; height: 500px; }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 15px; }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #2a3a4a; border-radius: 3px; }
+        .chat-bubble {
+            max-width: 80%;
+            padding: 10px 15px;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        .chat-bubble.user {
+            background: #1e88e5;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+        .chat-bubble.assistant {
+            background: #2a3a4a;
+            color: #e0e0e0;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+            padding: 15px;
+            border-top: 1px solid #2a3a4a;
+        }
+        .chat-input-area input {
+            flex: 1;
+            background: #0d1b2a;
+            border: 1px solid #2a3a4a;
+            border-radius: 8px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+        }
+        .chat-input-area input:focus { outline: none; border-color: #1e88e5; }
+        .chat-input-area button {
+            background: #1e88e5;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .chat-input-area button:disabled { opacity: 0.6; cursor: not-allowed; }
+        @media (max-width: 768px) {
+            .input-grid { grid-template-columns: 1fr; }
+            header h1 { font-size: 1.6rem; }
+            .output-panel-body { height: 280px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <h1>🇲🇾 Smart Travel Malaysia</h1>
+        <p>AI-powered travel planning across Malaysian states. Get destination overviews, budget analysis, government services, transport options, detailed itineraries, cost breakdowns, and safety tips.</p>
+    </header>
+
+    <!-- INPUT SECTION -->
+    <div class="input-section">
+        <h2>📝 Travel Details</h2>
+        <div class="input-grid">
+            <div class="input-group">
+                <label>Select Destination State</label>
+                <select id="state">
+                    <option value="Selangor" selected>Selangor</option>
+                    <option value="Johor">Johor</option>
+                    <option value="Kedah">Kedah</option>
+                    <option value="Kelantan">Kelantan</option>
+                    <option value="Malacca (Melaka)">Malacca (Melaka)</option>
+                    <option value="Negeri Sembilan">Negeri Sembilan</option>
+                    <option value="Pahang">Pahang</option>
+                    <option value="Penang (Pulau Pinang)">Penang (Pulau Pinang)</option>
+                    <option value="Perak">Perak</option>
+                    <option value="Perlis">Perlis</option>
+                    <option value="Sabah">Sabah</option>
+                    <option value="Sarawak">Sarawak</option>
+                    <option value="Terengganu">Terengganu</option>
+                    <option value="Random">Random</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Traveler Group Type</label>
+                <select id="traveler_group">
+                    <option value="Adult" selected>Adult</option>
+                    <option value="Students">Students</option>
+                    <option value="Seniors">Seniors</option>
+                    <option value="Family">Family</option>
+                    <option value="Mixed">Mixed</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>Select a City (optional)</label>
+                <input type="text" id="city" placeholder="e.g., George Town, Kota Kinabalu">
+            </div>
+            <div class="input-group">
+                <label>Budget Amount (optional)</label>
+                <input type="text" id="budget" placeholder="Enter a budget amount for the travel plan">
+            </div>
+            <div class="input-group">
+                <label>Currency Used (optional)</label>
+                <input type="text" id="currency" placeholder="Ringgit Malaysia" value="Ringgit Malaysia">
+            </div>
+            <div class="input-group">
+                <label>Enter your travel date (optional)</label>
+                <input type="text" id="travel_dates" placeholder="e.g., 15-20 June 2026">
+            </div>
+            <div class="input-group">
+                <label>Purpose of Travel (optional)</label>
+                <input type="text" id="purpose" placeholder="e.g., Tourism, Business, Study, etc.">
+            </div>
+            <div class="input-group">
+                <label>Number of Travellers (optional)</label>
+                <input type="text" id="num_travelers" placeholder="e.g., 4">
+            </div>
+            <div class="input-group">
+                <label>Interests and Preferences (optional)</label>
+                <input type="text" id="interests" placeholder="e.g., Muslim traveler, suggest halal restaurants nearby etc.">
+            </div>
+            <div class="input-group">
+                <label>Image Generator (optional)</label>
+                <input type="text" id="image_prompt" placeholder="Enter the desired view of the city or attractions">
+            </div>
+        </div>
+    </div>
+
+    <button class="btn-run-all" id="btnRunAll" onclick="runAll()">🚀 Generate Travel Plan</button>
+
+    <!-- OUTPUT PANELS -->
+    <!-- Image Panel -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🖼️ Destination Visual Preview</h3>
+            <div class="spinner" id="spinner-image"></div>
+        </div>
+        <div class="output-panel-body auto-height image-panel" id="output-image">
+            <p style="color:#90a4ae;">Click "Generate Travel Plan" to see a visual preview of your destination.</p>
+        </div>
+    </div>
+
+    <!-- Budget Analysis -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>💰 Budget Analysis and Recommendations</h3>
+            <div class="spinner" id="spinner-budget"></div>
+        </div>
+        <div class="output-panel-body" id="output-budget"></div>
+    </div>
+
+    <!-- Travel Overview -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🌍 Travel Overview</h3>
+            <div class="spinner" id="spinner-overview"></div>
+        </div>
+        <div class="output-panel-body" id="output-overview"></div>
+    </div>
+
+    <!-- Transport -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🚇 Transport and Accessibility</h3>
+            <div class="spinner" id="spinner-transport"></div>
+        </div>
+        <div class="output-panel-body" id="output-transport"></div>
+    </div>
+
+    <!-- Government Services -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🏛️ Government Services and Entry Requirements</h3>
+            <div class="spinner" id="spinner-government"></div>
+        </div>
+        <div class="output-panel-body" id="output-government"></div>
+    </div>
+
+    <!-- Cost Breakdown -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>📊 Estimated Cost Breakdown</h3>
+            <div class="spinner" id="spinner-cost"></div>
+        </div>
+        <div class="output-panel-body" id="output-cost"></div>
+    </div>
+
+    <!-- Detailed Itinerary -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>📅 Detailed Itinerary</h3>
+            <div class="spinner" id="spinner-itinerary"></div>
+        </div>
+        <div class="output-panel-body" id="output-itinerary"></div>
+    </div>
+
+    <!-- Government Subsidies -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🎫 Government Travel Subsidies and Benefits</h3>
+            <div class="spinner" id="spinner-subsidies"></div>
+        </div>
+        <div class="output-panel-body" id="output-subsidies"></div>
+    </div>
+
+    <!-- Safety Tips -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>🛡️ Safety, Legal and Traveler Tips</h3>
+            <div class="spinner" id="spinner-safety"></div>
+        </div>
+        <div class="output-panel-body" id="output-safety"></div>
+    </div>
+
+    <!-- Chat -->
+    <div class="output-panel">
+        <div class="output-panel-header">
+            <h3>💬 Chat with Local Malaysian Friend</h3>
+            <div class="spinner" id="spinner-chat"></div>
+        </div>
+        <div class="chat-container">
+            <div class="chat-messages" id="chat-messages">
+                <div class="chat-bubble assistant">Eh hello there! Selamat datang! 😊 Welcome to Malaysia lah!<br><br>I'm a local Malaysian, born and raised here, so I know all the best spots, the hidden places, and the real deal food - not just the tourist traps, you know?<br><br>🍜 <b>Best food spots</b> - where locals actually eat<br>🚇 <b>How to get around</b> - tips to save money<br>🏛️ <b>Secret places</b> - hidden gems<br>💡 <b>Local customs</b> - so you don't accidentally offend anyone<br>🤑 <b>Money-saving hacks</b> - travel like a local<br>📸 <b>Best photo spots</b> - Instagram-worthy!<br><br>Ask me anything! I'm here to help you have the best trip ever! 🇲🇾✨</div>
+            </div>
+            <div class="chat-input-area">
+                <input type="text" id="chat-input" placeholder="Ask me anything about traveling in Malaysia..." onkeydown="if(event.key==='Enter')sendChat()">
+                <button onclick="sendChat()" id="btn-chat-send">Send</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ============================================================
+// URL Placeholders (replaced by GitHub Actions during deploy)
+// ============================================================
+const STREAM_URLS = {
+    budget_analysis_and_recommendations: '__URL_BUDGET_ANALYSIS_AND_RECOMMENDATIONS__',
+    travel_overview: '__URL_TRAVEL_OVERVIEW__',
+    transport_and_accessibility: '__URL_TRANSPORT_AND_ACCESSIBILITY__',
+    government_services_and_entry_requirements: '__URL_GOVERNMENT_SERVICES_AND_ENTRY_REQUIREMENTS__',
+    estimated_cost_breakdown: '__URL_ESTIMATED_COST_BREAKDOWN__',
+    detailed_itinerary: '__URL_DETAILED_ITINERARY__',
+    government_travel_subsidies_and_benefits: '__URL_GOVERNMENT_TRAVEL_SUBSIDIES_AND_BENEFITS__',
+    safety_legal_and_traveler_tips: '__URL_SAFETY_LEGAL_AND_TRAVELER_TIPS__',
+    chat_with_local_malaysian_friend: '__URL_CHAT_WITH_LOCAL_MALAYSIAN_FRIEND__',
+};
+const DIAGRAM_API = '__DIAGRAM_API_URL__';
+
+// ============================================================
+// Gather user inputs
+// ============================================================
+function getInputs() {
+    return {
+        state: document.getElementById('state').value,
+        traveler_group: document.getElementById('traveler_group').value,
+        city: document.getElementById('city').value,
+        budget: document.getElementById('budget').value,
+        currency: document.getElementById('currency').value,
+        travel_dates: document.getElementById('travel_dates').value,
+        purpose: document.getElementById('purpose').value,
+        num_travelers: document.getElementById('num_travelers').value,
+        interests: document.getElementById('interests').value,
+        image_prompt: document.getElementById('image_prompt').value,
+    };
+}
+
+// ============================================================
+// Markdown renderer (simple line-by-line)
+// ============================================================
+function renderMarkdownLine(line) {
+    // Headers
+    if (line.startsWith('### ')) return '<h4 style="color:#64b5f6;margin:8px 0 4px;">' + line.slice(4) + '</h4>';
+    if (line.startsWith('## ')) return '<h3 style="color:#64b5f6;margin:10px 0 5px;">' + line.slice(3) + '</h3>';
+    if (line.startsWith('# ')) return '<h2 style="color:#64b5f6;margin:12px 0 6px;">' + line.slice(2) + '</h2>';
+    // HR
+    if (line.match(/^---+$/)) return '<hr style="border-color:#2a3a4a;margin:10px 0;">';
+    // Bullet lists
+    if (line.match(/^[\-\*]\s/)) return '<li style="margin-left:20px;">' + formatInline(line.slice(2)) + '</li>';
+    // Numbered lists
+    if (line.match(/^\d+\.\s/)) return '<li style="margin-left:20px;">' + formatInline(line.replace(/^\d+\.\s/, '')) + '</li>';
+    // Table rows
+    if (line.startsWith('|')) return renderTableRow(line);
+    // Empty line
+    if (line.trim() === '') return '<br>';
+    return '<span>' + formatInline(line) + '</span>';
+}
+
+function formatInline(text) {
+    text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+    text = text.replace(/`(.+?)`/g, '<code style="background:#0d1b2a;padding:2px 5px;border-radius:3px;">$1</code>');
+    return text;
+}
+
+function renderTableRow(line) {
+    const cells = line.split('|').filter(c => c.trim() !== '');
+    if (cells.every(c => c.trim().match(/^[\-:]+$/))) return '';
+    const tag = 'td';
+    const row = cells.map(c => `<${tag} style="border:1px solid #2a3a4a;padding:6px 10px;">${formatInline(c.trim())}</${tag}>`).join('');
+    return `<tr>${row}</tr>`;
+}
+
+// ============================================================
+// Streaming fetch helper
+// ============================================================
+async function streamToPanel(url, body, panelId, spinnerId) {
+    const panel = document.getElementById(panelId);
+    const spinner = document.getElementById(spinnerId);
+    panel.innerHTML = '';
+    spinner.style.display = 'block';
+
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+        let tableOpen = false;
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            buffer += decoder.decode(value, { stream: true });
+
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                const rendered = renderMarkdownLine(line);
+                if (!rendered) continue;
+                if (rendered.startsWith('<tr>') && !tableOpen) {
+                    panel.innerHTML += '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
+                    tableOpen = true;
+                }
+                if (!rendered.startsWith('<tr>') && tableOpen) {
+                    panel.innerHTML += '</table>';
+                    tableOpen = false;
+                }
+                const span = document.createElement('span');
+                span.className = 'md-line';
+                span.innerHTML = rendered;
+                panel.appendChild(span);
+                panel.scrollTop = panel.scrollHeight;
+            }
+        }
+        // Flush remaining buffer
+        if (buffer.trim()) {
+            const rendered = renderMarkdownLine(buffer);
+            if (rendered) {
+                if (rendered.startsWith('<tr>') && !tableOpen) {
+                    panel.innerHTML += '<table style="width:100%;border-collapse:collapse;margin:10px 0;">';
+                    tableOpen = true;
+                }
+                const span = document.createElement('span');
+                span.className = 'md-line';
+                span.innerHTML = rendered;
+                panel.appendChild(span);
+            }
+        }
+        if (tableOpen) panel.innerHTML += '</table>';
+    } catch (err) {
+        panel.innerHTML = `<span class="error-msg">Error: ${err.message}</span>`;
+    } finally {
+        spinner.style.display = 'none';
+    }
+}
+
+// ============================================================
+// Image generation (buffered)
+// ============================================================
+async function generateImage(inputs) {
+    const panel = document.getElementById('output-image');
+    const spinner = document.getElementById('spinner-image');
+    panel.innerHTML = '<p style="color:#90a4ae;">Generating image...</p>';
+    spinner.style.display = 'block';
+
+    try {
+        const response = await fetch(DIAGRAM_API + '/image', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                state: inputs.state,
+                specific_place: inputs.city,
+                image_prompt: inputs.image_prompt,
+            }),
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const data = await response.json();
+        panel.innerHTML = `<img src="data:image/png;base64,${data.image}" alt="Destination preview of ${inputs.state}">`;
+    } catch (err) {
+        panel.innerHTML = `<span class="error-msg">Image generation failed: ${err.message}</span>`;
+    } finally {
+        spinner.style.display = 'none';
+    }
+}
+
+// ============================================================
+// Run All
+// ============================================================
+function runAll() {
+    const btn = document.getElementById('btnRunAll');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating...';
+
+    const inputs = getInputs();
+
+    const tasks = [
+        generateImage(inputs),
+        streamToPanel(STREAM_URLS.budget_analysis_and_recommendations, inputs, 'output-budget', 'spinner-budget'),
+        streamToPanel(STREAM_URLS.travel_overview, inputs, 'output-overview', 'spinner-overview'),
+        streamToPanel(STREAM_URLS.transport_and_accessibility, inputs, 'output-transport', 'spinner-transport'),
+        streamToPanel(STREAM_URLS.government_services_and_entry_requirements, inputs, 'output-government', 'spinner-government'),
+        streamToPanel(STREAM_URLS.estimated_cost_breakdown, inputs, 'output-cost', 'spinner-cost'),
+        streamToPanel(STREAM_URLS.detailed_itinerary, inputs, 'output-itinerary', 'spinner-itinerary'),
+        streamToPanel(STREAM_URLS.government_travel_subsidies_and_benefits, inputs, 'output-subsidies', 'spinner-subsidies'),
+        streamToPanel(STREAM_URLS.safety_legal_and_traveler_tips, inputs, 'output-safety', 'spinner-safety'),
+    ];
+
+    Promise.allSettled(tasks).then(() => {
+        btn.disabled = false;
+        btn.textContent = '🚀 Generate Travel Plan';
+    });
+}
+
+// ============================================================
+// Chat functionality
+// ============================================================
+let chatHistory = [];
+
+async function sendChat() {
+    const input = document.getElementById('chat-input');
+    const message = input.value.trim();
+    if (!message) return;
+
+    const messagesDiv = document.getElementById('chat-messages');
+    const sendBtn = document.getElementById('btn-chat-send');
+
+    // Add user bubble
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble user';
+    userBubble.textContent = message;
+    messagesDiv.appendChild(userBubble);
+
+    chatHistory.push({ role: 'user', content: message });
+    input.value = '';
+    sendBtn.disabled = true;
+
+    // Add assistant bubble
+    const assistantBubble = document.createElement('div');
+    assistantBubble.className = 'chat-bubble assistant';
+    assistantBubble.innerHTML = '<span class="cursor-blink"></span>';
+    messagesDiv.appendChild(assistantBubble);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+    const state = document.getElementById('state').value;
+
+    try {
+        const response = await fetch(STREAM_URLS.chat_with_local_malaysian_friend, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                state: state,
+                message: message,
+                history: chatHistory.slice(0, -1),
+            }),
+        });
+
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullReply = '';
+
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            fullReply += chunk;
+            assistantBubble.innerHTML = formatInline(fullReply.replace(/\n/g, '<br>'));
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        chatHistory.push({ role: 'assistant', content: fullReply });
+    } catch (err) {
+        assistantBubble.innerHTML = `<span class="error-msg">Error: ${err.message}</span>`;
+    } finally {
+        sendBtn.disabled = false;
+        input.focus();
+    }
+}
+</script>
+</body>
+</html>

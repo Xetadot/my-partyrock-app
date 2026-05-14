@@ -1,0 +1,285 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Smart Travel Malaysia - AI-powered travel planning app
+
+Globals:
+  Function:
+    Timeout: 60
+    MemorySize: 256
+    Runtime: python3.12
+
+Resources:
+  # ============================================================
+  # IAM Role for Bedrock Access
+  # ============================================================
+  AppBedrockRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "SmartTravelMalaysia-BedrockRole-${AWS::StackName}"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: BedrockInvokePolicy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - bedrock:InvokeModel
+                  - bedrock:InvokeModelWithResponseStream
+                Resource:
+                  - !Sub "arn:aws:bedrock:ap-southeast-1:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6-20260217-v1:0"
+                  - "arn:aws:bedrock:ap-southeast-1::foundation-model/anthropic.claude-sonnet-4-6-20260217-v1:0"
+                  - "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6-20260217-v1:0"
+                  - "arn:aws:bedrock:*::foundation-model/amazon.nova-canvas-v1:0"
+
+  # ============================================================
+  # API Gateway for Image Generation
+  # ============================================================
+  AppApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'POST,OPTIONS'"
+        AllowHeaders: "'Content-Type'"
+        AllowOrigin: "'*'"
+
+  # ============================================================
+  # Image Generation Lambda (buffered, API Gateway)
+  # ============================================================
+  DestinationVisualPreviewFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/destination_visual_preview/
+      Handler: app.handler
+      Timeout: 30
+      MemorySize: 512
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /image
+            Method: POST
+
+  # ============================================================
+  # Streaming Text Lambdas (Flask + Lambda Web Adapter)
+  # ============================================================
+  BUDGETANALYSISANDRECOMMENDATIONSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/budget_analysis_and_recommendations/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  TRAVELOVERVIEWFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/travel_overview/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  TRANSPORTANDACCESSIBILITYFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/transport_and_accessibility/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  GOVERNMENTSERVICESANDENTRYREQUIREMENTSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/government_services_and_entry_requirements/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  ESTIMATEDCOSTBREAKDOWNFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/estimated_cost_breakdown/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  DETAILEDITINERARYFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/detailed_itinerary/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  GOVERNMENTTRAVELSUBSIDIESANDBENEFITSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/government_travel_subsidies_and_benefits/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  SAFETYLEGALANDTRAVELERTIPSFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/safety_legal_and_traveler_tips/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  ChatwithLocalMalaysianFriendFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/chat_with_local_malaysian_friend/
+      Handler: run.sh
+      Layers:
+        - !Sub "arn:aws:lambda:${AWS::Region}:753240598075:layer:LambdaAdapterLayerX86:27"
+      Environment:
+        Variables:
+          AWS_LAMBDA_EXEC_WRAPPER: /opt/bootstrap
+          AWS_LWA_INVOKE_MODE: response_stream
+          PORT: "8080"
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: RESPONSE_STREAM
+
+  # ============================================================
+  # S3 Bucket for Frontend Static Website
+  # ============================================================
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      WebsiteConfiguration:
+        IndexDocument: index.html
+        ErrorDocument: index.html
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: "*"
+            Action: s3:GetObject
+            Resource: !Sub "${FrontendBucket.Arn}/*"
+
+# ============================================================
+# Outputs
+# ============================================================
+Outputs:
+  DiagramApiUrl:
+    Value: !Sub "https://${AppApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  BUDGETANALYSISANDRECOMMENDATIONSUrl:
+    Value: !GetAtt BUDGETANALYSISANDRECOMMENDATIONSFunctionUrl.FunctionUrl
+  TRAVELOVERVIEWUrl:
+    Value: !GetAtt TRAVELOVERVIEWFunctionUrl.FunctionUrl
+  TRANSPORTANDACCESSIBILITYUrl:
+    Value: !GetAtt TRANSPORTANDACCESSIBILITYFunctionUrl.FunctionUrl
+  GOVERNMENTSERVICESANDENTRYREQUIREMENTSUrl:
+    Value: !GetAtt GOVERNMENTSERVICESANDENTRYREQUIREMENTSFunctionUrl.FunctionUrl
+  ESTIMATEDCOSTBREAKDOWNUrl:
+    Value: !GetAtt ESTIMATEDCOSTBREAKDOWNFunctionUrl.FunctionUrl
+  DETAILEDITINERARYUrl:
+    Value: !GetAtt DETAILEDITINERARYFunctionUrl.FunctionUrl
+  GOVERNMENTTRAVELSUBSIDIESANDBENEFITSUrl:
+    Value: !GetAtt GOVERNMENTTRAVELSUBSIDIESANDBENEFITSFunctionUrl.FunctionUrl
+  SAFETYLEGALANDTRAVELERTIPSUrl:
+    Value: !GetAtt SAFETYLEGALANDTRAVELERTIPSFunctionUrl.FunctionUrl
+  ChatwithLocalMalaysianFriendUrl:
+    Value: !GetAtt ChatwithLocalMalaysianFriendFunctionUrl.FunctionUrl
+  WebsiteUrl:
+    Value: !GetAtt FrontendBucket.WebsiteURL
+  BucketName:
+    Value: !Ref FrontendBucket
