@@ -3,7 +3,7 @@ import base64
 import random
 import boto3
 
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
+bedrock = boto3.client("bedrock-runtime", region_name="us-east-1")
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
