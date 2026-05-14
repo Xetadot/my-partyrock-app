@@ -6,7 +6,7 @@ from flask import Flask, request, Response, stream_with_context
 app = Flask(__name__)
 
 BEDROCK_MODEL_ID = "global.anthropic.claude-sonnet-4-6-20260217-v1:0"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a GovTech benefits advisor. Provide comprehensive, realistic information about Malaysian government subsidies, discounts, and travel benefits available to different groups.
 

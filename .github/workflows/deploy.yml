@@ -38,7 +38,7 @@ jobs:
             --stack-name smart-travel-malaysia \
             --s3-bucket ${{ secrets.SAM_DEPLOY_BUCKET }} \
             --capabilities CAPABILITY_IAM CAPABILITY_NAMED_IAM \
-            --region ap-southeast-1 \
+            --region ap-southeast-5 \
             --no-confirm-changeset \
             --no-fail-on-empty-changeset
 
