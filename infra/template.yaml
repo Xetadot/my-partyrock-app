@@ -39,8 +39,6 @@ Resources:
                   - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6"
                   - "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6"
                   - "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6"
-                  - "arn:aws:bedrock:*::foundation-model/amazon.nova-canvas-v1:0"
-                  - "arn:aws:bedrock:*::foundation-model/stability.sd3-5-large-v1:0"
                   - "arn:aws:bedrock:*::foundation-model/stability.*"
               - Effect: Allow
                 Action:
@@ -56,25 +54,6 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: prod
-      BinaryMediaTypes:
-        - "*~1*"
-      Cors:
-        AllowMethods: "'POST,OPTIONS'"
-        AllowHeaders: "'Content-Type'"
-        AllowOrigin: "'*'"
-      GatewayResponses:
-        DEFAULT_4XX:
-          ResponseParameters:
-            Headers:
-              Access-Control-Allow-Origin: "'*'"
-              Access-Control-Allow-Headers: "'Content-Type'"
-              Access-Control-Allow-Methods: "'POST,OPTIONS'"
-        DEFAULT_5XX:
-          ResponseParameters:
-            Headers:
-              Access-Control-Allow-Origin: "'*'"
-              Access-Control-Allow-Headers: "'Content-Type'"
-              Access-Control-Allow-Methods: "'POST,OPTIONS'"
 
   # ============================================================
   # Image Generation Lambda
@@ -88,15 +67,21 @@ Resources:
       MemorySize: 512
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /image
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /image
+            Method: OPTIONS
 
   # ============================================================
-  # Text Generation Lambdas (API Gateway, buffered)
+  # Text Generation Lambdas
   # ============================================================
   BUDGETANALYSISANDRECOMMENDATIONSFunction:
     Type: AWS::Serverless::Function
@@ -105,12 +90,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /budget-analysis
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /budget-analysis
+            Method: OPTIONS
 
   TRAVELOVERVIEWFunction:
     Type: AWS::Serverless::Function
@@ -119,12 +110,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /travel-overview
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /travel-overview
+            Method: OPTIONS
 
   TRANSPORTANDACCESSIBILITYFunction:
     Type: AWS::Serverless::Function
@@ -133,12 +130,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /transport
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /transport
+            Method: OPTIONS
 
   GOVERNMENTSERVICESANDENTRYREQUIREMENTSFunction:
     Type: AWS::Serverless::Function
@@ -147,12 +150,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /government-services
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /government-services
+            Method: OPTIONS
 
   ESTIMATEDCOSTBREAKDOWNFunction:
     Type: AWS::Serverless::Function
@@ -161,12 +170,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /cost-breakdown
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /cost-breakdown
+            Method: OPTIONS
 
   DETAILEDITINERARYFunction:
     Type: AWS::Serverless::Function
@@ -175,12 +190,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /itinerary
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /itinerary
+            Method: OPTIONS
 
   GOVERNMENTTRAVELSUBSIDIESANDBENEFITSFunction:
     Type: AWS::Serverless::Function
@@ -189,12 +210,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /subsidies
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /subsidies
+            Method: OPTIONS
 
   SAFETYLEGALANDTRAVELERTIPSFunction:
     Type: AWS::Serverless::Function
@@ -203,12 +230,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /safety-tips
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /safety-tips
+            Method: OPTIONS
 
   ChatwithLocalMalaysianFriendFunction:
     Type: AWS::Serverless::Function
@@ -217,12 +250,18 @@ Resources:
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
       Events:
-        ApiEvent:
+        Post:
           Type: Api
           Properties:
             RestApiId: !Ref AppApi
             Path: /chat
             Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /chat
+            Method: OPTIONS
 
   # ============================================================
   # S3 Bucket for Frontend Static Website
