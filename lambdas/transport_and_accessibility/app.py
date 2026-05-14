@@ -70,7 +70,7 @@ Please provide comprehensive transport and accessibility information."""
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 4096,
-                "system": [{"text": SYSTEM_PROMPT}],
+                "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),
         )

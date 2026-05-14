@@ -70,7 +70,7 @@ Please create a detailed day-by-day itinerary in table format."""
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 4096,
-                "system": [{"text": SYSTEM_PROMPT}],
+                "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),
         )

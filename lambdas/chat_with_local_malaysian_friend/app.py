@@ -53,7 +53,7 @@ def handler(event, context):
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
                 "max_tokens": 4096,
-                "system": [{"text": system_with_context}],
+                "system": [{"type": "text", "text": system_with_context}],
                 "messages": messages,
             }),
         )
