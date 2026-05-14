@@ -67,8 +67,9 @@ Please analyze this budget and provide comprehensive guidance."""
             "body": text,
         }
     except Exception as e:
+        import traceback
         return {
             "statusCode": 500,
-            "headers": CORS_HEADERS,
-            "body": json.dumps({"error": str(e)}),
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "body": json.dumps({"error": str(e), "trace": traceback.format_exc()}),
         }
