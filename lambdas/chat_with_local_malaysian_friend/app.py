@@ -52,7 +52,7 @@ def handler(event, context):
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 2048,
+                "max_tokens": 1024,
                 "system": [{"type": "text", "text": system_with_context}],
                 "messages": messages,
             }),
