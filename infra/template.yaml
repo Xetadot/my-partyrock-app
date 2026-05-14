@@ -54,6 +54,19 @@ Resources:
     Type: AWS::Serverless::Api
     Properties:
       StageName: prod
+      GatewayResponses:
+        DEFAULT_4XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type'"
+              Access-Control-Allow-Methods: "'POST,OPTIONS'"
+        DEFAULT_5XX:
+          ResponseParameters:
+            Headers:
+              Access-Control-Allow-Origin: "'*'"
+              Access-Control-Allow-Headers: "'Content-Type'"
+              Access-Control-Allow-Methods: "'POST,OPTIONS'"
 
   # ============================================================
   # Image Generation Lambda
