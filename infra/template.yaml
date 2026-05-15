@@ -280,6 +280,46 @@ Resources:
             Path: /chat
             Method: OPTIONS
 
+  TravelMomentsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/travel_moments/
+      Handler: app.handler
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /moments
+            Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /moments
+            Method: OPTIONS
+
+  TravelSummaryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/travel_summary/
+      Handler: app.handler
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /summary
+            Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /summary
+            Method: OPTIONS
+
   # ============================================================
   # S3 Bucket for Frontend Static Website
   # ============================================================
