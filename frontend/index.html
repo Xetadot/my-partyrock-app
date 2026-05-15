@@ -418,7 +418,7 @@ function closeMomentVideo() {
 }
 
 // ===== MAP =====
-let map, markers = [], routeControl = null, currentFilter = 'all';
+let map, markers = [], currentFilter = 'all';
 function initMap() {
     map = L.map('map').setView(STATE_COORDS['Selangor'], 12);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
@@ -430,11 +430,9 @@ function updateMap(state) {
     filterMap('all', document.querySelector('.map-filter-btn'));
 }
 function showRoute(state) {
-    if (routeControl) { map.removeLayer(routeControl); routeControl = null; }
-    const pois = POI_DATA[state];
-    if (!pois || !pois.attractions || pois.attractions.length < 2) return;
-    const latlngs = pois.attractions.map(p => [p.lat, p.lng]);
-    routeControl = L.polyline(latlngs, { color: '#0057a0', weight: 3, opacity: 0.7, dashArray: '8,8' }).addTo(map);
+    // Just center the map, no route line
+    const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
+    map.setView(coords, 13);
 }
 function filterMap(category, btn) {
     currentFilter = category;
@@ -610,33 +608,32 @@ function showDay(index) {
 }
 
 function drawDayRoute(dayIndex) {
-    // Remove previous route
+    // Clear previous day markers
     if (itineraryRoute) { map.removeLayer(itineraryRoute); itineraryRoute = null; }
-    // Get POIs for current state and draw a route through them for the selected day
+    markers.forEach(m => map.removeLayer(m)); markers = [];
+    // Get POIs for current state
     const state = document.getElementById('state').value;
     const pois = POI_DATA[state];
     if (!pois || !pois.attractions) return;
-    // Distribute attractions across days
+    // Combine all location types
     const allPoints = [...pois.attractions, ...(pois.food || []).slice(0,2), ...(pois.shopping || []).slice(0,1)];
     const totalDays = document.querySelectorAll('.day-tab').length || 1;
     const perDay = Math.ceil(allPoints.length / totalDays);
     const start = dayIndex * perDay;
     const dayPoints = allPoints.slice(start, start + perDay);
-    if (dayPoints.length < 2) {
-        if (dayPoints.length === 1) {
-            map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
-        }
-        return;
-    }
-    const latlngs = dayPoints.map(p => [p.lat, p.lng]);
-    itineraryRoute = L.polyline(latlngs, { color: '#000000', weight: 4, opacity: 0.85 }).addTo(map);
-    map.fitBounds(itineraryRoute.getBounds().pad(0.2));
-    // Add numbered markers
+    if (dayPoints.length === 0) return;
+    // Pin each location (no route line)
     dayPoints.forEach((p, i) => {
-        const icon = L.divIcon({ html: `<div style="background:#000;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">${i+1}</div>`, iconSize: [22,22], className: '' });
+        const icon = L.divIcon({ html: `<div style="background:#0057a0;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${i+1}</div>`, iconSize: [26,26], className: '' });
         const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`<b>${i+1}. ${p.name}</b>`);
         markers.push(m);
     });
+    // Fit map to show all pins
+    if (markers.length > 1) {
+        map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+    } else {
+        map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
+    }
 }
 
 // ===== IMAGE (with harmful input check) =====
