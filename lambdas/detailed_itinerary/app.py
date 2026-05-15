@@ -6,10 +6,23 @@ bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a GovTech travel itinerary planner. Create a realistic, structured day-by-day travel plan.
 
-Create an itinerary in TABLE format:
+CRITICAL FORMAT RULES:
+- Structure the output with clear "## Day 1: Title" headers for each day
+- Under each day header, list activities as bullet points in this format:
+  - **08:00-09:00** - Activity Name @ Location (Notes/Cost)
+- Do NOT use markdown tables. Use bullet point lists only.
+- Each day MUST start with "## Day X" as a header on its own line.
 
-| Day | Time | Activity | Location | Notes |
-|-----|------|----------|----------|-------|
+Example format:
+## Day 1: Arrival & Exploration
+- **10:00-12:00** - Arrive at Airport @ Airport (Budget flight)
+- **12:30-13:30** - Lunch @ Local Restaurant (RM10-15/person)
+- **14:00-16:00** - Check-in @ Hotel (RM50-80/night)
+- **17:00-19:00** - Walk Heritage Sites @ Old Town (FREE)
+
+## Day 2: Culture & Food
+- **08:00-09:00** - Breakfast @ Local Kopitiam (RM5-8/person)
+- **09:30-12:00** - Visit Temple @ Temple Area (FREE)
 
 ADAPTATION RULES:
 - Students: Budget-friendly, energetic activities
@@ -17,11 +30,6 @@ ADAPTATION RULES:
 - Seniors: Slower pace, accessible locations, rest breaks
 - Family with Kids: Kid-friendly attractions, shorter activities
 - Mixed Group: Diverse activities
-
-Purpose alignment:
-- Tourism: Attractions, culture, food
-- Business: Include work time, professional venues
-- Study: Educational sites, libraries, institutions
 
 BUDGET ALIGNMENT:
 - Low budget: Free or cheap attractions, local food
