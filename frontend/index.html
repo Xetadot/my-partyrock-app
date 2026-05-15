@@ -101,12 +101,17 @@
         .result-card-body::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
 
         /* Itinerary sub-widgets */
-        .itinerary-days{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
-        .day-tab{padding:7px 14px;border:1.5px solid #e0e5ec;border-radius:8px;font-size:0.75rem;font-family:'Poppins',sans-serif;font-weight:500;cursor:pointer;background:#fff;color:#555;transition:all 0.2s}
-        .day-tab:hover{border-color:#0057a0;color:#0057a0}
-        .day-tab.active{background:#0057a0;color:#fff;border-color:#0057a0}
-        .day-content{display:none;padding:12px 0;font-size:0.83rem;line-height:1.7;color:#444;border-top:1px solid #eef1f5;margin-top:8px}
+        .itinerary-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(100px,1fr));gap:10px;margin-bottom:16px}
+        .day-tab{padding:16px 10px;border:1.5px solid #e0e5ec;border-radius:12px;font-size:0.78rem;font-family:'Poppins',sans-serif;font-weight:600;cursor:pointer;background:#fff;color:#555;transition:all 0.2s;text-align:center;display:flex;flex-direction:column;align-items:center;gap:6px}
+        .day-tab:hover{border-color:#0057a0;color:#0057a0;transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,87,160,0.15)}
+        .day-tab.active{background:linear-gradient(135deg,#0057a0,#003d73);color:#fff;border-color:#0057a0;box-shadow:0 4px 16px rgba(0,87,160,0.3)}
+        .day-tab .day-icon{font-size:1.4rem}
+        .day-tab .day-label{font-size:0.7rem;opacity:0.8;font-weight:400}
+        .day-content{display:none;padding:14px 0;font-size:0.83rem;line-height:1.7;color:#444;border-top:1px solid #eef1f5;margin-top:10px}
         .day-content.active{display:block}
+        .day-content table{width:100%;border-collapse:collapse;margin:8px 0;font-size:0.8rem}
+        .day-content table td,.day-content table th{border:1px solid #e8ecf0;padding:8px 12px;text-align:left;vertical-align:top}
+        .day-content table tr:first-child td{background:#f8fafc;font-weight:600;color:#0057a0}
 
         /* MAP */
         .map-column{position:sticky;top:80px}
@@ -500,9 +505,22 @@ async function fetchToPanel(url, body, panelId, spinnerId) {
     try {
         const r = await fetch(url, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const text = await r.text(); const lines = text.split('\n'); let tbl = false;
-        for (const line of lines) { const rd = renderMarkdownLine(line); if(!rd)continue; if(rd.startsWith('<tr>')&&!tbl){panel.innerHTML+='<table style="width:100%;border-collapse:collapse;margin:8px 0">';tbl=true} if(!rd.startsWith('<tr>')&&tbl){panel.innerHTML+='</table>';tbl=false} const s=document.createElement('span');s.className='md-line';s.innerHTML=rd;panel.appendChild(s); }
-        if(tbl) panel.innerHTML+='</table>';
+        const text = await r.text(); const lines = text.split('\n');
+        let html = '', inTable = false;
+        for (const line of lines) {
+            if (line.trim().startsWith('|')) {
+                const cells = line.split('|').filter(c => c.trim() !== '');
+                if (cells.every(c => c.trim().match(/^[\-:]+$/))) continue;
+                if (!inTable) { html += '<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:0.8rem">'; inTable = true; }
+                html += '<tr>' + cells.map(c => `<td style="border:1px solid #e8ecf0;padding:8px 12px;vertical-align:top">${fmt(c.trim())}</td>`).join('') + '</tr>';
+            } else {
+                if (inTable) { html += '</table>'; inTable = false; }
+                const rd = renderMarkdownLine(line);
+                if (rd) html += `<span class="md-line">${rd}</span>`;
+            }
+        }
+        if (inTable) html += '</table>';
+        panel.innerHTML = html;
     } catch(e){panel.innerHTML=`<span class="error-msg">⚠️ ${e.message}</span>`} finally{spinner.style.display='none'}
 }
 
@@ -547,19 +565,39 @@ function parseItineraryDays(text) {
 }
 
 function renderItineraryDays(panel, days) {
-    // Day tabs
+    const dayIcons = ['🌅','🏛️','🌴','🎭','🏖️','🌄','🎉','🗺️','✈️','🌺'];
+    // Day tabs as picture buttons
     let tabsHtml = '<div class="itinerary-days">';
     days.forEach((d, i) => {
-        tabsHtml += `<button class="day-tab${i===0?' active':''}" onclick="showDay(${i})">${d.title}</button>`;
+        const icon = dayIcons[i % dayIcons.length];
+        const label = d.title.replace(/[:\-–]/g,'').trim();
+        tabsHtml += `<button class="day-tab${i===0?' active':''}" onclick="showDay(${i})"><span class="day-icon">${icon}</span><span>${label}</span><span class="day-label">Tap to view route</span></button>`;
     });
     tabsHtml += '</div>';
-    // Day contents
+    // Day contents with proper table rendering
     let contentsHtml = '';
     days.forEach((d, i) => {
-        const rendered = d.content.split('\n').map(l => renderMarkdownLine(l)).filter(Boolean).join('');
-        contentsHtml += `<div class="day-content${i===0?' active':''}" id="day-panel-${i}">${rendered}</div>`;
+        const lines = d.content.split('\n');
+        let html = '';
+        let inTable = false;
+        for (const line of lines) {
+            if (line.trim().startsWith('|')) {
+                const cells = line.split('|').filter(c => c.trim() !== '');
+                if (cells.every(c => c.trim().match(/^[\-:]+$/))) continue; // skip separator
+                if (!inTable) { html += '<table>'; inTable = true; }
+                html += '<tr>' + cells.map(c => `<td>${fmt(c.trim())}</td>`).join('') + '</tr>';
+            } else {
+                if (inTable) { html += '</table>'; inTable = false; }
+                const rd = renderMarkdownLine(line);
+                if (rd) html += `<span class="md-line">${rd}</span>`;
+            }
+        }
+        if (inTable) html += '</table>';
+        contentsHtml += `<div class="day-content${i===0?' active':''}" id="day-panel-${i}">${html}</div>`;
     });
     panel.innerHTML = tabsHtml + contentsHtml;
+    // Auto-draw route for day 0
+    drawDayRoute(0);
 }
 
 function showDay(index) {
