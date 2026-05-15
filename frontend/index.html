@@ -100,6 +100,14 @@
         .result-card-body::-webkit-scrollbar{width:5px}
         .result-card-body::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
 
+        /* Itinerary sub-widgets */
+        .itinerary-days{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+        .day-tab{padding:7px 14px;border:1.5px solid #e0e5ec;border-radius:8px;font-size:0.75rem;font-family:'Poppins',sans-serif;font-weight:500;cursor:pointer;background:#fff;color:#555;transition:all 0.2s}
+        .day-tab:hover{border-color:#0057a0;color:#0057a0}
+        .day-tab.active{background:#0057a0;color:#fff;border-color:#0057a0}
+        .day-content{display:none;padding:12px 0;font-size:0.83rem;line-height:1.7;color:#444;border-top:1px solid #eef1f5;margin-top:8px}
+        .day-content.active{display:block}
+
         /* MAP */
         .map-column{position:sticky;top:80px}
         .map-container{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #eef1f5;overflow:hidden}
@@ -498,6 +506,100 @@ async function fetchToPanel(url, body, panelId, spinnerId) {
     } catch(e){panel.innerHTML=`<span class="error-msg">⚠️ ${e.message}</span>`} finally{spinner.style.display='none'}
 }
 
+// ===== ITINERARY (sub-widgets per day) =====
+let itineraryRoute = null;
+async function fetchItinerary(inputs) {
+    const panel = document.getElementById('output-itinerary'), spinner = document.getElementById('spinner-itinerary');
+    panel.innerHTML = ''; panel.classList.remove('collapsed'); spinner.style.display = 'block';
+    try {
+        const r = await fetch(ENDPOINTS.detailed_itinerary, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(inputs)});
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const text = await r.text();
+        // Parse into days
+        const days = parseItineraryDays(text);
+        if (days.length === 0) {
+            // Fallback: render as normal markdown
+            panel.innerHTML = text.split('\n').map(l => `<span class="md-line">${renderMarkdownLine(l)}</span>`).join('');
+        } else {
+            renderItineraryDays(panel, days);
+        }
+    } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
+    finally { spinner.style.display = 'none'; }
+}
+
+function parseItineraryDays(text) {
+    const days = [];
+    const lines = text.split('\n');
+    let currentDay = null;
+    let currentContent = [];
+    for (const line of lines) {
+        const dayMatch = line.match(/^#+\s*(Day\s*\d+|DAY\s*\d+)/i) || line.match(/^\*\*(Day\s*\d+|DAY\s*\d+)/i);
+        if (dayMatch) {
+            if (currentDay) days.push({ title: currentDay, content: currentContent.join('\n') });
+            currentDay = line.replace(/^#+\s*/, '').replace(/^\*\*/, '').replace(/\*\*$/, '').trim();
+            currentContent = [];
+        } else {
+            currentContent.push(line);
+        }
+    }
+    if (currentDay) days.push({ title: currentDay, content: currentContent.join('\n') });
+    return days;
+}
+
+function renderItineraryDays(panel, days) {
+    // Day tabs
+    let tabsHtml = '<div class="itinerary-days">';
+    days.forEach((d, i) => {
+        tabsHtml += `<button class="day-tab${i===0?' active':''}" onclick="showDay(${i})">${d.title}</button>`;
+    });
+    tabsHtml += '</div>';
+    // Day contents
+    let contentsHtml = '';
+    days.forEach((d, i) => {
+        const rendered = d.content.split('\n').map(l => renderMarkdownLine(l)).filter(Boolean).join('');
+        contentsHtml += `<div class="day-content${i===0?' active':''}" id="day-panel-${i}">${rendered}</div>`;
+    });
+    panel.innerHTML = tabsHtml + contentsHtml;
+}
+
+function showDay(index) {
+    // Toggle tabs
+    document.querySelectorAll('.day-tab').forEach((t, i) => { t.classList.toggle('active', i === index); });
+    document.querySelectorAll('.day-content').forEach((c, i) => { c.classList.toggle('active', i === index); });
+    // Draw route on map for this day
+    drawDayRoute(index);
+}
+
+function drawDayRoute(dayIndex) {
+    // Remove previous route
+    if (itineraryRoute) { map.removeLayer(itineraryRoute); itineraryRoute = null; }
+    // Get POIs for current state and draw a route through them for the selected day
+    const state = document.getElementById('state').value;
+    const pois = POI_DATA[state];
+    if (!pois || !pois.attractions) return;
+    // Distribute attractions across days
+    const allPoints = [...pois.attractions, ...(pois.food || []).slice(0,2), ...(pois.shopping || []).slice(0,1)];
+    const totalDays = document.querySelectorAll('.day-tab').length || 1;
+    const perDay = Math.ceil(allPoints.length / totalDays);
+    const start = dayIndex * perDay;
+    const dayPoints = allPoints.slice(start, start + perDay);
+    if (dayPoints.length < 2) {
+        if (dayPoints.length === 1) {
+            map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
+        }
+        return;
+    }
+    const latlngs = dayPoints.map(p => [p.lat, p.lng]);
+    itineraryRoute = L.polyline(latlngs, { color: '#000000', weight: 4, opacity: 0.85 }).addTo(map);
+    map.fitBounds(itineraryRoute.getBounds().pad(0.2));
+    // Add numbered markers
+    dayPoints.forEach((p, i) => {
+        const icon = L.divIcon({ html: `<div style="background:#000;color:#fff;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700">${i+1}</div>`, iconSize: [22,22], className: '' });
+        const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`<b>${i+1}. ${p.name}</b>`);
+        markers.push(m);
+    });
+}
+
 // ===== IMAGE (with harmful input check) =====
 async function generateImage(inputs) {
     const panel = document.getElementById('output-image'), spinner = document.getElementById('spinner-image');
@@ -528,7 +630,7 @@ function runAll() {
     async function go() {
         await Promise.allSettled([generateImage(inputs),fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations,inputs,'output-budget','spinner-budget'),fetchToPanel(ENDPOINTS.travel_overview,inputs,'output-overview','spinner-overview')]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.transport_and_accessibility,inputs,'output-transport','spinner-transport'),fetchToPanel(ENDPOINTS.government_services_and_entry_requirements,inputs,'output-government','spinner-government'),fetchToPanel(ENDPOINTS.estimated_cost_breakdown,inputs,'output-cost','spinner-cost')]);
-        await Promise.allSettled([fetchToPanel(ENDPOINTS.detailed_itinerary,inputs,'output-itinerary','spinner-itinerary'),fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies'),fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety')]);
+        await Promise.allSettled([fetchItinerary(inputs),fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies'),fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety')]);
         btn.disabled = false; btn.textContent = '🚀 Generate Travel Plan';
     }
     go();
