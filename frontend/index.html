@@ -85,7 +85,12 @@
         /* RESULTS + MAP */
         .results-wrapper{max-width:1400px;margin:0 auto;padding:50px 20px}
         .results-wrapper>h2{font-size:1.6rem;font-weight:700;color:#0057a0;text-align:center;margin-bottom:35px}
-        .results-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+        .results-layout{display:grid;grid-template-columns:1fr 8px 1fr;gap:0;align-items:start}
+
+        /* Resize handle */
+        .resize-handle{width:8px;cursor:col-resize;background:#e8ecf0;border-radius:4px;position:relative;min-height:400px;transition:background 0.2s}
+        .resize-handle:hover,.resize-handle.dragging{background:#0057a0}
+        .resize-handle::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:40px;border-left:1px solid #aaa;border-right:1px solid #aaa}
         .results-column{display:flex;flex-direction:column;gap:14px}
         .result-card{background:#fff;border-radius:12px;box-shadow:0 2px 12px rgba(0,0,0,0.06);overflow:hidden;border:1px solid #eef1f5;transition:box-shadow 0.3s}
         .result-card:hover{box-shadow:0 6px 24px rgba(0,0,0,0.1)}
@@ -146,7 +151,7 @@
         .chatbot-input button{margin-left:7px;background:#0057a0;color:#fff;border:none;border-radius:8px;padding:9px 14px;font-size:0.8rem;font-weight:600;cursor:pointer;font-family:'Poppins',sans-serif}
         .chatbot-input button:disabled{opacity:0.5;cursor:not-allowed}
 
-        @media(max-width:1024px){.results-layout{grid-template-columns:1fr}.map-column{position:static}#map{height:380px}}
+        @media(max-width:1024px){.results-layout{grid-template-columns:1fr!important;display:flex;flex-direction:column;gap:20px}.map-column{position:static}.resize-handle{display:none}#map{height:380px}}
         @media(max-width:768px){.hero-title{font-size:2rem}.search-card{padding:18px}.form-grid{grid-template-columns:1fr}.chatbot-window{width:calc(100% - 32px);right:16px;bottom:84px;height:60vh}.topbar{padding:0 15px}.topbar-brand{font-size:0.9rem}}
 
         /* Moments AI photos */
@@ -258,6 +263,9 @@
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🎫 Subsidies</h3><div class="spinner" id="spinner-subsidies"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-subsidies"></div></div>
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🛡️ Safety & Tips</h3><div class="spinner" id="spinner-safety"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-safety"></div></div>
         </div>
+        <!-- Resize Handle -->
+        <div class="resize-handle" id="resizeHandle"></div>
+        <!-- Right: Map + Summary -->
         <div class="map-column">
             <div class="map-container">
                 <div class="map-filters">
@@ -694,10 +702,12 @@ async function fetchMomentsAI(inputs) {
         const photos = data.photos || [];
         if (photos.length === 0) { panel.innerHTML = '<p style="color:#999">No photos found.</p>'; spinner.style.display='none'; return; }
         const location = inputs.city || inputs.state;
+        // Use loremflickr.com which works reliably for free image search
         let html = '<div class="moments-ai-grid">';
-        photos.forEach(p => {
-            const imgUrl = `https://source.unsplash.com/400x300/?${encodeURIComponent(p.search_query || location)}`;
-            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${p.author} · ${p.date}</div></div>`;
+        photos.forEach((p, i) => {
+            const query = encodeURIComponent(p.search_query || location + ' malaysia');
+            const imgUrl = `https://loremflickr.com/400/300/${query}?lock=${i + Date.now()}`;
+            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(p.title)}'"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${p.author} · ${p.date}</div></div>`;
         });
         html += '</div>';
         panel.innerHTML = html;
@@ -786,6 +796,22 @@ document.addEventListener('DOMContentLoaded', () => {
     renderPlaces();
     renderMoments();
     document.getElementById('state').addEventListener('change', e => updateMap(e.target.value));
+    // Resize handle for columns
+    const handle = document.getElementById('resizeHandle');
+    const layout = document.querySelector('.results-layout');
+    let isDragging = false;
+    handle.addEventListener('mousedown', (e) => { isDragging = true; handle.classList.add('dragging'); e.preventDefault(); });
+    document.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const rect = layout.getBoundingClientRect();
+        const offset = e.clientX - rect.left;
+        const total = rect.width;
+        const leftPct = Math.max(25, Math.min(75, (offset / total) * 100));
+        const rightPct = 100 - leftPct - 1;
+        layout.style.gridTemplateColumns = `${leftPct}% 8px ${rightPct}%`;
+        map.invalidateSize();
+    });
+    document.addEventListener('mouseup', () => { isDragging = false; handle.classList.remove('dragging'); });
 });
 </script>
 </body>
