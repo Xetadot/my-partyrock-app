@@ -1,7 +1,7 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a GovTech immigration and services officer. Provide essential government information for travelers to Malaysia.

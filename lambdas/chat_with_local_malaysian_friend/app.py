@@ -1,7 +1,7 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-sonnet-4-6"
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a friendly, enthusiastic local Malaysian friend who speaks in a casual Malaysian English style (with occasional "lah", "ah", "wah" expressions). You are knowledgeable about all Malaysian states, food, culture, transport, hidden gems, and local customs.

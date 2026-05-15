@@ -39,6 +39,10 @@ Resources:
                   - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6"
                   - "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6"
                   - "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6"
+                  - !Sub "arn:aws:bedrock:ap-southeast-5:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
+                  - "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
+                  - "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
                   - "arn:aws:bedrock:*::foundation-model/stability.*"
               - Effect: Allow
                 Action:
