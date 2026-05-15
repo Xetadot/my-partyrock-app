@@ -708,13 +708,12 @@ async function fetchMomentsAI(inputs) {
         const data = await r.json();
         const photos = data.photos || [];
         if (photos.length === 0) { panel.innerHTML = '<p style="color:#999">No photos found.</p>'; spinner.style.display='none'; return; }
-        const location = inputs.city || inputs.state;
-        // Use loremflickr.com which works reliably for free image search
+        // Use picsum.photos (Lorem Picsum) - always reliable, random beautiful photos
         let html = '<div class="moments-ai-grid">';
         photos.forEach((p, i) => {
-            const query = encodeURIComponent(p.search_query || location + ' malaysia');
-            const imgUrl = `https://loremflickr.com/400/300/${query}?lock=${i + Date.now()}`;
-            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy" onerror="this.src='https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(p.title)}'"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${p.author} · ${p.date}</div></div>`;
+            const seed = encodeURIComponent(p.search_query || p.title || 'malaysia');
+            const imgUrl = `https://picsum.photos/seed/${seed}${i}/400/300`;
+            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${p.author} · ${p.date}</div></div>`;
         });
         html += '</div>';
         panel.innerHTML = html;
