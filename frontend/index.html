@@ -220,15 +220,16 @@
         <div class="search-card">
             <h2>Plan Your Trip</h2>
             <div class="form-grid">
-                <div class="form-group"><label>Destination State</label><select id="state"><option value="Selangor" selected>Selangor</option><option value="Johor">Johor</option><option value="Kedah">Kedah</option><option value="Kelantan">Kelantan</option><option value="Malacca (Melaka)">Malacca (Melaka)</option><option value="Negeri Sembilan">Negeri Sembilan</option><option value="Pahang">Pahang</option><option value="Penang (Pulau Pinang)">Penang (Pulau Pinang)</option><option value="Perak">Perak</option><option value="Perlis">Perlis</option><option value="Sabah">Sabah</option><option value="Sarawak">Sarawak</option><option value="Terengganu">Terengganu</option><option value="Random">Random</option></select></div>
-                <div class="form-group"><label>Traveler Group</label><select id="traveler_group"><option value="Adult" selected>Adult</option><option value="Students">Students</option><option value="Seniors">Seniors</option><option value="Family">Family</option><option value="Mixed">Mixed</option></select></div>
-                <div class="form-group"><label>City</label><input type="text" id="city" placeholder="e.g., George Town"></div>
-                <div class="form-group"><label>Budget</label><input type="text" id="budget" placeholder="e.g., 2000"></div>
-                <div class="form-group"><label>Travel Date</label><input type="text" id="travel_dates" placeholder="e.g., 15-20 June 2026"></div>
-                <div class="form-group"><label>Purpose</label><input type="text" id="purpose" placeholder="e.g., Tourism"></div>
-                <div class="form-group"><label>Travellers</label><input type="text" id="num_travelers" placeholder="e.g., 4"></div>
-                <div class="form-group"><label>Interests</label><input type="text" id="interests" placeholder="e.g., Halal food, culture"></div>
-                <div class="form-group"><label>Image Prompt</label><input type="text" id="image_prompt" placeholder="e.g., Petronas Towers at sunset"></div>
+                <div class="form-group"><label>Destination State <span style="opacity:0.5;font-weight:400">(optional)</span></label><select id="state"><option value="Selangor" selected>Selangor</option><option value="Johor">Johor</option><option value="Kedah">Kedah</option><option value="Kelantan">Kelantan</option><option value="Malacca (Melaka)">Malacca (Melaka)</option><option value="Negeri Sembilan">Negeri Sembilan</option><option value="Pahang">Pahang</option><option value="Penang (Pulau Pinang)">Penang (Pulau Pinang)</option><option value="Perak">Perak</option><option value="Perlis">Perlis</option><option value="Sabah">Sabah</option><option value="Sarawak">Sarawak</option><option value="Terengganu">Terengganu</option><option value="Random">Random</option></select></div>
+                <div class="form-group"><label>Traveler Group <span style="opacity:0.5;font-weight:400">(optional)</span></label><select id="traveler_group"><option value="Adult" selected>Adult</option><option value="Students">Students</option><option value="Seniors">Seniors</option><option value="Family">Family</option><option value="Mixed">Mixed</option></select></div>
+                <div class="form-group"><label>City <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="city" placeholder="e.g., George Town"></div>
+                <div class="form-group"><label>Budget <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="budget" placeholder="e.g., 2000"></div>
+                <div class="form-group"><label>Depart Date <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="date" id="depart_date"></div>
+                <div class="form-group"><label>Return Date <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="date" id="return_date"></div>
+                <div class="form-group"><label>Purpose <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="purpose" placeholder="e.g., Tourism"></div>
+                <div class="form-group"><label>Travellers <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="num_travelers" placeholder="e.g., 4"></div>
+                <div class="form-group"><label>Interests <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="interests" placeholder="e.g., Halal food, culture"></div>
+                <div class="form-group"><label>Image Prompt <span style="opacity:0.5;font-weight:400">(optional)</span></label><input type="text" id="image_prompt" placeholder="e.g., Petronas Towers at sunset"></div>
             </div>
             <button class="btn-generate" id="btnRunAll" onclick="runAll()">🚀 Generate Travel Plan</button>
         </div>
@@ -505,13 +506,19 @@ setInterval(() => { const s = document.querySelectorAll('.hero-slide'); s[slideI
 
 // ===== INPUTS =====
 function getInputs() {
+    const departDate = document.getElementById('depart_date').value;
+    const returnDate = document.getElementById('return_date').value;
+    let travel_dates = '';
+    if (departDate && returnDate) travel_dates = departDate + ' to ' + returnDate;
+    else if (departDate) travel_dates = departDate;
+    else if (returnDate) travel_dates = returnDate;
     return {
         state: document.getElementById('state').value,
         traveler_group: document.getElementById('traveler_group').value,
         city: document.getElementById('city').value,
         budget: document.getElementById('budget').value,
         currency: document.getElementById('currency').value,
-        travel_dates: document.getElementById('travel_dates').value,
+        travel_dates: travel_dates,
         purpose: document.getElementById('purpose').value,
         num_travelers: document.getElementById('num_travelers').value,
         interests: document.getElementById('interests').value,
