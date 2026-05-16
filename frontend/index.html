@@ -698,7 +698,9 @@ async function generateImage(inputs) {
     } catch(e){panel.innerHTML=`<span class="error-msg">⚠️ ${e.message}</span>`} finally{spinner.style.display='none'}
 }
 
-// ===== MOMENTS AI (photo search via Wikimedia) =====
+// ===== MOMENTS AI (photo search via Pexels) =====
+const PEXELS_KEY = '__PEXELS_API_KEY__';
+
 async function fetchMomentsAI(inputs) {
     const panel = document.getElementById('output-moments-ai'), spinner = document.getElementById('spinner-moments-ai');
     panel.innerHTML = '<p style="color:#999">Searching photos...</p>'; panel.classList.remove('collapsed'); spinner.style.display = 'block';
@@ -709,38 +711,28 @@ async function fetchMomentsAI(inputs) {
         const photos = data.photos || [];
         if (photos.length === 0) { panel.innerHTML = '<p style="color:#999">No photos found.</p>'; spinner.style.display='none'; return; }
 
-        // Fetch real images from Wikimedia Commons for each photo
+        // Fetch real images from Pexels for each photo
         let html = '<div class="moments-ai-grid">';
         const imagePromises = photos.map(async (p) => {
             const query = p.search_query || p.title || inputs.state + ' Malaysia';
             try {
-                const wikiRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&generator=images&titles=${encodeURIComponent(query)}&gimlimit=5&prop=imageinfo&iiprop=url|extmetadata&iiurlwidth=400&format=json&origin=*`);
-                const wikiData = await wikiRes.json();
-                const pages = wikiData.query && wikiData.query.pages ? Object.values(wikiData.query.pages) : [];
-                const img = pages.find(pg => pg.imageinfo && pg.imageinfo[0] && pg.imageinfo[0].thumburl && !pg.title.includes('.svg'));
-                if (img && img.imageinfo[0].thumburl) return img.imageinfo[0].thumburl;
-            } catch(e) {}
-            // Fallback: search Wikimedia Commons directly
-            try {
-                const searchRes = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' Malaysia')}&srnamespace=6&srlimit=1&format=json&origin=*`);
-                const searchData = await searchRes.json();
-                if (searchData.query && searchData.query.search && searchData.query.search[0]) {
-                    const title = searchData.query.search[0].title;
-                    const infoRes = await fetch(`https://commons.wikimedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=imageinfo&iiprop=url&iiurlwidth=400&format=json&origin=*`);
-                    const infoData = await infoRes.json();
-                    const infoPages = Object.values(infoData.query.pages);
-                    if (infoPages[0] && infoPages[0].imageinfo && infoPages[0].imageinfo[0].thumburl) {
-                        return infoPages[0].imageinfo[0].thumburl;
-                    }
+                const pexRes = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(query)}&per_page=1&orientation=landscape`, {
+                    headers: { 'Authorization': PEXELS_KEY }
+                });
+                const pexData = await pexRes.json();
+                if (pexData.photos && pexData.photos[0]) {
+                    return { url: pexData.photos[0].src.medium, photographer: pexData.photos[0].photographer };
                 }
             } catch(e) {}
             return null;
         });
 
-        const imageUrls = await Promise.all(imagePromises);
+        const imageResults = await Promise.all(imagePromises);
         photos.forEach((p, i) => {
-            const imgUrl = imageUrls[i] || `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(p.title)}`;
-            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${p.author} · ${p.date}</div></div>`;
+            const result = imageResults[i];
+            const imgUrl = result ? result.url : `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(p.title)}`;
+            const photographer = result ? result.photographer : p.author;
+            html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${photographer} · ${p.date}</div></div>`;
         });
         html += '</div>';
         panel.innerHTML = html;
