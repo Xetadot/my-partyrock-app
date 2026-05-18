@@ -27,6 +27,7 @@
         .hero-slides{position:absolute;inset:0;z-index:0}
         .hero-slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.5s ease-in-out}
         .hero-slide.active{opacity:1}
+        .hero-credit{position:absolute;bottom:20px;left:20px;color:rgba(255,255,255,0.7);font-size:0.72rem;font-weight:400;z-index:3;text-shadow:0 1px 3px rgba(0,0,0,0.5)}
         .hero-overlay{position:absolute;inset:0;background:linear-gradient(135deg,rgba(0,40,80,0.7) 0%,rgba(0,80,120,0.5) 50%,rgba(0,40,80,0.7) 100%);z-index:1}
         .hero-content{position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
         .hero-title{font-size:2.8rem;font-weight:700;color:#fff;text-align:center;margin-bottom:8px;text-shadow:0 2px 10px rgba(0,0,0,0.3)}
@@ -48,9 +49,13 @@
         .places-section{display:none;max-width:1400px;margin:0 auto;padding:40px 20px}
         .places-section.show{display:block}
         .places-section h2{font-size:1.5rem;font-weight:700;color:#0057a0;margin-bottom:20px}
-        .places-slider{display:flex;gap:16px;overflow-x:auto;padding:10px 0 20px;scroll-snap-type:x mandatory}
-        .places-slider::-webkit-scrollbar{height:6px}
-        .places-slider::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+        .slider-wrapper{position:relative}
+        .slider-btn{position:absolute;top:50%;transform:translateY(-50%);width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.95);border:1px solid #e0e5ec;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;color:#333;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:5;transition:all 0.2s}
+        .slider-btn:hover{background:#0057a0;color:#fff;border-color:#0057a0}
+        .slider-btn.left{left:-12px}
+        .slider-btn.right{right:-12px}
+        .places-slider{display:flex;gap:16px;overflow-x:auto;padding:10px 0 20px;scroll-snap-type:x mandatory;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}
+        .places-slider::-webkit-scrollbar{display:none}
         .place-card{min-width:280px;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.3s;scroll-snap-align:start;background:#fff;flex-shrink:0}
         .place-card:hover{transform:translateY(-4px)}
         .place-card img{width:100%;height:180px;object-fit:cover}
@@ -63,9 +68,8 @@
         .moments-section{display:none;max-width:1400px;margin:0 auto;padding:40px 20px}
         .moments-section.show{display:block}
         .moments-section h2{font-size:1.5rem;font-weight:700;color:#0057a0;margin-bottom:20px}
-        .moments-grid{display:flex;gap:14px;overflow-x:auto;padding:10px 0 20px}
-        .moments-grid::-webkit-scrollbar{height:6px}
-        .moments-grid::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+        .moments-grid{display:flex;gap:14px;overflow-x:auto;padding:10px 0 20px;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}
+        .moments-grid::-webkit-scrollbar{display:none}
         .moment-card{min-width:200px;width:200px;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(0,0,0,0.1);cursor:pointer;transition:transform 0.3s;flex-shrink:0;position:relative}
         .moment-card:hover{transform:scale(1.03)}
         .moment-card img{width:100%;height:340px;object-fit:cover}
@@ -208,19 +212,19 @@
 <!-- HERO -->
 <section class="hero">
     <div class="hero-slides">
-        <div class="hero-slide active" style="background-image:url('https://images.pexels.com/photos/22804/pexels-photo-22804.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/1324500/pexels-photo-1324500.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/5904675/pexels-photo-5904675.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/4239537/pexels-photo-4239537.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/5475578/pexels-photo-5475578.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/1382394/pexels-photo-1382394.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/2108832/pexels-photo-2108832.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/2589457/pexels-photo-2589457.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
-        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/190482/pexels-photo-190482.jpeg?auto=compress&cs=tinysrgb&w=1920')"></div>
+        <div class="hero-slide active" style="background-image:url('https://images.pexels.com/photos/5224545/pexels-photo-5224545.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Perlis by Pok Rie</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/4861031/pexels-photo-4861031.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Kedah by Pok Rie</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/4861031/pexels-photo-4861031.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Penang by Vitalina</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/4607681/pexels-photo-4607681.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Perak by Ngeow Shen Sin</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/3724014/pexels-photo-3724014.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Selangor by Tom Fisk</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/1123993/pexels-photo-1123993.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Negeri Sembilan by Leon Wong</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/33676572/pexels-photo-33676572.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Malacca by Lloyd Alozie</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/6900882/pexels-photo-6900882.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Johor by Balasz Simon</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/13890758/pexels-photo-13890758.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Kelantan by Muhammad Irfan Aiman</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/4467146/pexels-photo-4467146.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Terengganu by Faizal Ortho</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/33709889/pexels-photo-33709889.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Pahang by Lloyd Alozie</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/30574043/pexels-photo-30574043.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Sabah by Nurra Ghaz</span></div>
+        <div class="hero-slide" style="background-image:url('https://images.pexels.com/photos/16007740/pexels-photo-16007740.jpeg?auto=compress&cs=tinysrgb&w=1920')"><span class="hero-credit">Sarawak by Kevin T</span></div>
     </div>
     <div class="hero-overlay"></div>
     <div class="hero-content">
@@ -248,13 +252,21 @@
 <!-- PLACES SECTION -->
 <section class="places-section" id="placesSection">
     <h2>📍 Places You May Like</h2>
-    <div class="places-slider" id="placesSlider"></div>
+    <div class="slider-wrapper">
+        <button class="slider-btn left" onclick="scrollSlider('placesSlider',-300)">‹</button>
+        <div class="places-slider" id="placesSlider"></div>
+        <button class="slider-btn right" onclick="scrollSlider('placesSlider',300)">›</button>
+    </div>
 </section>
 
 <!-- MOMENTS SECTION -->
 <section class="moments-section" id="momentsSection">
     <h2>📸 Moments from Malaysia</h2>
-    <div class="moments-grid" id="momentsGrid"></div>
+    <div class="slider-wrapper">
+        <button class="slider-btn left" onclick="scrollSlider('momentsGrid',-300)">‹</button>
+        <div class="moments-grid" id="momentsGrid"></div>
+        <button class="slider-btn right" onclick="scrollSlider('momentsGrid',300)">›</button>
+    </div>
 </section>
 
 <!-- RESULTS + MAP -->
@@ -377,30 +389,30 @@ const POI_DATA = {
 
 // ===== PLACES DATA =====
 const PLACES_DATA = [
-    {name:'Petronas Twin Towers',city:'Kuala Lumpur',state:'Selangor',rating:'4.8',img:'https://images.pexels.com/photos/22804/pexels-photo-22804.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Kek Lok Si Temple',city:'George Town',state:'Penang (Pulau Pinang)',rating:'4.7',img:'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Langkawi Sky Bridge',city:'Langkawi',state:'Kedah',rating:'4.6',img:'https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Mount Kinabalu',city:'Kota Kinabalu',state:'Sabah',rating:'4.9',img:'https://images.pexels.com/photos/2108832/pexels-photo-2108832.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Batu Caves',city:'Gombak',state:'Selangor',rating:'4.5',img:'https://images.pexels.com/photos/1382394/pexels-photo-1382394.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Jonker Street Night Market',city:'Melaka City',state:'Malacca (Melaka)',rating:'4.4',img:'https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Perhentian Islands',city:'Kuala Besut',state:'Terengganu',rating:'4.8',img:'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Cameron Highlands Tea',city:'Tanah Rata',state:'Pahang',rating:'4.5',img:'https://images.pexels.com/photos/2589457/pexels-photo-2589457.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Legoland Malaysia',city:'Johor Bahru',state:'Johor',rating:'4.3',img:'https://images.pexels.com/photos/5475578/pexels-photo-5475578.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Kuching Waterfront',city:'Kuching',state:'Sarawak',rating:'4.4',img:'https://images.pexels.com/photos/1450353/pexels-photo-1450353.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    {name:'Seremban Seri Menanti',city:'Seremban',state:'Negeri Sembilan',rating:'4.2',img:'https://images.pexels.com/photos/190482/pexels-photo-190482.jpeg?auto=compress&cs=tinysrgb&w=400'},
-    {name:'Kota Bharu Heritage',city:'Kota Bharu',state:'Kelantan',rating:'4.3',img:'https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
-    {name:'Perlis Gua Kelam',city:'Kaki Bukit',state:'Perlis',rating:'4.1',img:'https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop'},
+    {name:'Petronas Twin Towers',city:'Kuala Lumpur',state:'Selangor',rating:'4.8',img:'https://images.pexels.com/photos/35749880/pexels-photo-35749880.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Kek Lok Si Temple',city:'George Town',state:'Penang (Pulau Pinang)',rating:'4.7',img:'https://images.pexels.com/photos/33985412/pexels-photo-33985412.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Langkawi Sky Bridge',city:'Langkawi',state:'Kedah',rating:'4.6',img:'https://images.pexels.com/photos/11099854/pexels-photo-11099854.png?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Mount Kinabalu',city:'Kota Kinabalu',state:'Sabah',rating:'4.9',img:'https://images.pexels.com/photos/12587135/pexels-photo-12587135.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Jonker Street Night Market',city:'Melaka City',state:'Malacca (Melaka)',rating:'4.4',img:'https://images.pexels.com/photos/13460234/pexels-photo-13460234.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Cameron Highlands Tea',city:'Tanah Rata',state:'Pahang',rating:'4.5',img:'https://images.pexels.com/photos/30039331/pexels-photo-30039331.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Legoland Malaysia',city:'Johor Bahru',state:'Johor',rating:'4.3',img:'https://images.pexels.com/photos/7907117/pexels-photo-7907117.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Perhentian Islands',city:'Kuala Besut',state:'Terengganu',rating:'4.8',img:'https://images.pexels.com/photos/4467146/pexels-photo-4467146.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Batu Caves',city:'Gombak',state:'Selangor',rating:'4.5',img:'https://images.pexels.com/photos/3724014/pexels-photo-3724014.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Kuching Waterfront',city:'Kuching',state:'Sarawak',rating:'4.4',img:'https://images.pexels.com/photos/16007740/pexels-photo-16007740.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Perlis State Park',city:'Kaki Bukit',state:'Perlis',rating:'4.1',img:'https://images.pexels.com/photos/5224545/pexels-photo-5224545.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Kota Bharu Heritage',city:'Kota Bharu',state:'Kelantan',rating:'4.3',img:'https://images.pexels.com/photos/13890758/pexels-photo-13890758.jpeg?auto=compress&cs=tinysrgb&w=400'},
+    {name:'Seremban Lake Gardens',city:'Seremban',state:'Negeri Sembilan',rating:'4.2',img:'https://images.pexels.com/photos/1123993/pexels-photo-1123993.jpeg?auto=compress&cs=tinysrgb&w=400'},
 ];
 
 // ===== MOMENTS DATA (YouTube - Malaysia travel) =====
 const MOMENTS_DATA = [
-    {city:'Kuala Lumpur',caption:'KLCC at Night',img:'https://images.pexels.com/photos/1324500/pexels-photo-1324500.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/v_iER2FuLy4?autoplay=1'},
-    {city:'Penang',caption:'Street Food Tour',img:'https://images.pexels.com/photos/2846217/pexels-photo-2846217.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/KeDSg4Y_njg?autoplay=1'},
-    {city:'Langkawi',caption:'Cable Car Ride',img:'https://images.pexels.com/photos/3225531/pexels-photo-3225531.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/kqitl9wsfmU?autoplay=1'},
-    {city:'Sabah',caption:'Island Paradise',img:'https://images.pexels.com/photos/2108832/pexels-photo-2108832.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/ZmiKejtTYlY?autoplay=1'},
-    {city:'Melaka',caption:'Heritage Walk',img:'https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/7pDA99wDYLo?autoplay=1'},
-    {city:'Cameron Highlands',caption:'Tea Plantations',img:'https://images.pexels.com/photos/2589457/pexels-photo-2589457.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/SwbQmxm5rJ0?autoplay=1'},
-    {city:'Johor Bahru',caption:'City Vibes',img:'https://images.pexels.com/photos/5475578/pexels-photo-5475578.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/NzfTQ1G-fAs?autoplay=1'},
+    {city:'Kuala Lumpur',caption:'KLCC at Night',img:'https://images.pexels.com/photos/35749880/pexels-photo-35749880.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/v_iER2FuLy4?autoplay=1'},
+    {city:'Penang',caption:'Street Food Tour',img:'https://images.pexels.com/photos/33985412/pexels-photo-33985412.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/KeDSg4Y_njg?autoplay=1'},
+    {city:'Langkawi',caption:'Cable Car Ride',img:'https://images.pexels.com/photos/11099854/pexels-photo-11099854.png?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/kqitl9wsfmU?autoplay=1'},
+    {city:'Sabah',caption:'Island Paradise',img:'https://images.pexels.com/photos/12587135/pexels-photo-12587135.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/ZmiKejtTYlY?autoplay=1'},
+    {city:'Melaka',caption:'Heritage Walk',img:'https://images.pexels.com/photos/13460234/pexels-photo-13460234.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/7pDA99wDYLo?autoplay=1'},
+    {city:'Cameron Highlands',caption:'Tea Plantations',img:'https://images.pexels.com/photos/30039331/pexels-photo-30039331.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/SwbQmxm5rJ0?autoplay=1'},
+    {city:'Johor Bahru',caption:'City Vibes',img:'https://images.pexels.com/photos/7907117/pexels-photo-7907117.jpeg?auto=compress&cs=tinysrgb&w=300&h=500&fit=crop',embedUrl:'https://www.youtube.com/embed/NzfTQ1G-fAs?autoplay=1'},
 ];
 
 // ===== TOPBAR FUNCTIONS =====
@@ -416,6 +428,11 @@ function toggleSection(section) {
     const moments = document.getElementById('momentsSection');
     if (section === 'places') { places.classList.toggle('show'); moments.classList.remove('show'); }
     else { moments.classList.toggle('show'); places.classList.remove('show'); closeMomentVideo(); }
+}
+
+// ===== SLIDER NAV =====
+function scrollSlider(id, amount) {
+    document.getElementById(id).scrollBy({ left: amount, behavior: 'smooth' });
 }
 
 // ===== RENDER PLACES =====
