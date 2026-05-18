@@ -38,18 +38,8 @@ BUDGET ALIGNMENT:
 
 Include morning, afternoon, and evening plans. Be realistic about timing and distances."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     budget = body.get("budget", "")
@@ -87,7 +77,7 @@ Please create a detailed day-by-day itinerary in table format."""
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "headers": {"Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

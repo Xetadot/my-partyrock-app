@@ -38,18 +38,8 @@ Provide structured information:
 
 Format with clear headers and bullet points."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     purpose = body.get("purpose", "")
@@ -78,7 +68,7 @@ Please provide essential government services and entry requirements information.
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "headers": {"Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

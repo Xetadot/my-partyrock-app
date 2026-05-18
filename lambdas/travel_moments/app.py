@@ -16,18 +16,8 @@ Return ONLY a JSON array with exactly 5 objects. Each object must have:
 Return ONLY valid JSON array, no other text. Example:
 [{"title":"Sunset at KLCC Park","location":"KLCC Park, KL","author":"Ahmad Razali","date":"2024","search_query":"klcc park sunset kuala lumpur"}]"""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     city = body.get("city", "")
     interests = body.get("interests", "")
@@ -59,12 +49,12 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"photos": photos}),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": str(e)}),
         }

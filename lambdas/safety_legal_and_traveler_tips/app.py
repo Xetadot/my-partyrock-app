@@ -43,18 +43,8 @@ For Mixed Groups: Coordination tips, inclusive planning
 
 Format with clear sections and bullet points. Be practical and respectful."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     traveler_group = body.get("traveler_group", "Adult")
@@ -88,7 +78,7 @@ Please provide essential safety, legal, and traveler tips."""
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "headers": {"Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

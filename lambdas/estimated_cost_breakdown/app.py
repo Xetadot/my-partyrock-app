@@ -30,18 +30,8 @@ ALLOCATION GUIDELINES:
 
 Adjust percentages based on traveler group, budget level, and state. Provide brief notes explaining the allocation strategy below the table."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     budget = body.get("budget", "")
@@ -79,7 +69,7 @@ Please create a detailed cost breakdown table that totals exactly to the budget 
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "headers": {"Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

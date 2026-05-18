@@ -28,18 +28,8 @@ For weather, consider:
 
 Return ONLY valid JSON, no other text."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     city = body.get("city", "")
     budget = body.get("budget", "")
@@ -82,12 +72,12 @@ Return JSON only with summary, highlights, budget_verdict, best_time_to_visit, w
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps(summary),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": str(e)}),
         }

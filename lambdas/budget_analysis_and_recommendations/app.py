@@ -22,18 +22,8 @@ Provide:
 
 Be honest, practical, and constructive."""
 
-CORS_HEADERS = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "Content-Type",
-    "Access-Control-Allow-Methods": "POST,OPTIONS",
-}
-
-
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
-        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
-
-    body = json.loads(event.get("body", "{}"))
+body = json.loads(event.get("body", "{}"))
     budget = body.get("budget", "")
     currency = body.get("currency", "Ringgit Malaysia")
     num_travelers = body.get("num_travelers", "")
@@ -63,13 +53,13 @@ Please analyze this budget and provide comprehensive guidance."""
 
         return {
             "statusCode": 200,
-            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
+            "headers": {"Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:
         import traceback
         return {
             "statusCode": 500,
-            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "headers": {"Content-Type": "application/json"},
             "body": json.dumps({"error": str(e), "trace": traceback.format_exc()}),
         }
