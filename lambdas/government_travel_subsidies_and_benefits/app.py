@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
+BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
 
 SYSTEM_PROMPT = """You are a GovTech benefits advisor. Provide comprehensive, realistic information about Malaysian government subsidies, discounts, and travel benefits available to different groups.
 
@@ -44,7 +44,7 @@ CORS_HEADERS = {
 
 
 def handler(event, context):
-    if event.get("httpMethod") == "OPTIONS":
+    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
 
     body = json.loads(event.get("body", "{}"))
@@ -71,7 +71,7 @@ Please provide comprehensive information about government subsidies and travel b
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1024,
+                "max_tokens": 4096,
                 "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),

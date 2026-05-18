@@ -12,7 +12,7 @@ CORS_HEADERS = {
 
 
 def handler(event, context):
-    if event.get("httpMethod") == "OPTIONS":
+    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
 
     body = json.loads(event.get("body", "{}"))
@@ -47,7 +47,7 @@ def handler(event, context):
 
     try:
         response = bedrock.invoke_model(
-            modelId="stability.stable-image-core-v1:1",
+            modelId="stability.stable-image-ultra-v1:1",
             body=request_body,
             accept="application/json",
             contentType="application/json",

@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
+BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
 
 SYSTEM_PROMPT = """You are a GovTech financial planner. Create a detailed cost breakdown that matches the user's stated budget.
 
@@ -38,7 +38,7 @@ CORS_HEADERS = {
 
 
 def handler(event, context):
-    if event.get("httpMethod") == "OPTIONS":
+    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
         return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
 
     body = json.loads(event.get("body", "{}"))
@@ -69,7 +69,7 @@ Please create a detailed cost breakdown table that totals exactly to the budget 
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 1024,
+                "max_tokens": 4096,
                 "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),

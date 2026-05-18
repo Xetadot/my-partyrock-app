@@ -1,21 +1,21 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
-Description: Smart Travel Malaysia - AI-powered travel planning app
+Description: Smart Travel Malaysia - AI-powered travel planning (ap-southeast-1, Function URLs)
 
 Globals:
   Function:
-    Timeout: 60
-    MemorySize: 256
+    Timeout: 120
+    MemorySize: 512
     Runtime: python3.12
 
 Resources:
   # ============================================================
-  # IAM Role for Bedrock Access
+  # IAM Role
   # ============================================================
   AppBedrockRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Sub "SmartTravelMalaysia-BedrockRole-${AWS::StackName}"
+      RoleName: !Sub "SmartTravelMY-Role-${AWS::StackName}"
       AssumeRolePolicyDocument:
         Version: "2012-10-17"
         Statement:
@@ -26,7 +26,7 @@ Resources:
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
       Policies:
-        - PolicyName: BedrockInvokePolicy
+        - PolicyName: BedrockFullAccess
           PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -34,16 +34,7 @@ Resources:
                 Action:
                   - bedrock:InvokeModel
                   - bedrock:InvokeModelWithResponseStream
-                Resource:
-                  - !Sub "arn:aws:bedrock:ap-southeast-5:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6"
-                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-sonnet-4-6"
-                  - "arn:aws:bedrock:*::foundation-model/anthropic.claude-sonnet-4-6"
-                  - "arn:aws:bedrock:::foundation-model/anthropic.claude-sonnet-4-6"
-                  - !Sub "arn:aws:bedrock:ap-southeast-5:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
-                  - !Sub "arn:aws:bedrock:*:${AWS::AccountId}:inference-profile/global.anthropic.claude-haiku-4-5-20251001-v1:0"
-                  - "arn:aws:bedrock:*::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
-                  - "arn:aws:bedrock:::foundation-model/anthropic.claude-haiku-4-5-20251001-v1:0"
-                  - "arn:aws:bedrock:*::foundation-model/stability.*"
+                Resource: "*"
               - Effect: Allow
                 Action:
                   - aws-marketplace:ViewSubscriptions
@@ -52,276 +43,217 @@ Resources:
                 Resource: "*"
 
   # ============================================================
-  # API Gateway
+  # Text Lambdas with Function URLs (no timeout limit)
   # ============================================================
-  AppApi:
-    Type: AWS::Serverless::Api
-    Properties:
-      StageName: prod
-      GatewayResponses:
-        DEFAULT_4XX:
-          ResponseParameters:
-            Headers:
-              Access-Control-Allow-Origin: "'*'"
-              Access-Control-Allow-Headers: "'Content-Type'"
-              Access-Control-Allow-Methods: "'POST,OPTIONS'"
-        DEFAULT_5XX:
-          ResponseParameters:
-            Headers:
-              Access-Control-Allow-Origin: "'*'"
-              Access-Control-Allow-Headers: "'Content-Type'"
-              Access-Control-Allow-Methods: "'POST,OPTIONS'"
-
-  # ============================================================
-  # Image Generation Lambda
-  # ============================================================
-  DestinationVisualPreviewFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: ../lambdas/destination_visual_preview/
-      Handler: app.handler
-      Timeout: 30
-      MemorySize: 512
-      Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /image
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /image
-            Method: OPTIONS
-
-  # ============================================================
-  # Text Generation Lambdas
-  # ============================================================
-  BUDGETANALYSISANDRECOMMENDATIONSFunction:
+  BudgetAnalysisFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/budget_analysis_and_recommendations/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /budget-analysis
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /budget-analysis
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  TRAVELOVERVIEWFunction:
+  TravelOverviewFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/travel_overview/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /travel-overview
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /travel-overview
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  TRANSPORTANDACCESSIBILITYFunction:
+  TransportFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/transport_and_accessibility/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /transport
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /transport
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  GOVERNMENTSERVICESANDENTRYREQUIREMENTSFunction:
+  GovernmentServicesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/government_services_and_entry_requirements/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /government-services
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /government-services
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  ESTIMATEDCOSTBREAKDOWNFunction:
+  CostBreakdownFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/estimated_cost_breakdown/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /cost-breakdown
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /cost-breakdown
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  DETAILEDITINERARYFunction:
+  ItineraryFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/detailed_itinerary/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /itinerary
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /itinerary
-            Method: OPTIONS
+      Timeout: 180
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  GOVERNMENTTRAVELSUBSIDIESANDBENEFITSFunction:
+  SubsidiesFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/government_travel_subsidies_and_benefits/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /subsidies
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /subsidies
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  SAFETYLEGALANDTRAVELERTIPSFunction:
+  SafetyTipsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/safety_legal_and_traveler_tips/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /safety-tips
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /safety-tips
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  ChatwithLocalMalaysianFriendFunction:
+  ChatFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/chat_with_local_malaysian_friend/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /chat
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /chat
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  TravelMomentsFunction:
+  MomentsFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/travel_moments/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /moments
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /moments
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
-  TravelSummaryFunction:
+  SummaryFunction:
     Type: AWS::Serverless::Function
     Properties:
       CodeUri: ../lambdas/travel_summary/
       Handler: app.handler
       Role: !GetAtt AppBedrockRole.Arn
-      Events:
-        Post:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /summary
-            Method: POST
-        Options:
-          Type: Api
-          Properties:
-            RestApiId: !Ref AppApi
-            Path: /summary
-            Method: OPTIONS
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
+
+  ImageFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/destination_visual_preview/
+      Handler: app.handler
+      Timeout: 60
+      MemorySize: 1024
+      Role: !GetAtt AppBedrockRole.Arn
+      FunctionUrlConfig:
+        AuthType: NONE
+        InvokeMode: BUFFERED
+        Cors:
+          AllowOrigins:
+            - "*"
+          AllowMethods:
+            - POST
+          AllowHeaders:
+            - Content-Type
 
   # ============================================================
-  # S3 Bucket for Frontend Static Website
+  # S3 Bucket for Frontend
   # ============================================================
   FrontendBucket:
     Type: AWS::S3::Bucket
@@ -348,12 +280,31 @@ Resources:
             Action: s3:GetObject
             Resource: !Sub "${FrontendBucket.Arn}/*"
 
-# ============================================================
-# Outputs
-# ============================================================
 Outputs:
-  ApiUrl:
-    Value: !Sub "https://${AppApi}.execute-api.${AWS::Region}.amazonaws.com/prod"
+  BudgetAnalysisUrl:
+    Value: !GetAtt BudgetAnalysisFunctionUrl.FunctionUrl
+  TravelOverviewUrl:
+    Value: !GetAtt TravelOverviewFunctionUrl.FunctionUrl
+  TransportUrl:
+    Value: !GetAtt TransportFunctionUrl.FunctionUrl
+  GovernmentServicesUrl:
+    Value: !GetAtt GovernmentServicesFunctionUrl.FunctionUrl
+  CostBreakdownUrl:
+    Value: !GetAtt CostBreakdownFunctionUrl.FunctionUrl
+  ItineraryUrl:
+    Value: !GetAtt ItineraryFunctionUrl.FunctionUrl
+  SubsidiesUrl:
+    Value: !GetAtt SubsidiesFunctionUrl.FunctionUrl
+  SafetyTipsUrl:
+    Value: !GetAtt SafetyTipsFunctionUrl.FunctionUrl
+  ChatUrl:
+    Value: !GetAtt ChatFunctionUrl.FunctionUrl
+  MomentsUrl:
+    Value: !GetAtt MomentsFunctionUrl.FunctionUrl
+  SummaryUrl:
+    Value: !GetAtt SummaryFunctionUrl.FunctionUrl
+  ImageUrl:
+    Value: !GetAtt ImageFunctionUrl.FunctionUrl
   WebsiteUrl:
     Value: !GetAtt FrontendBucket.WebsiteURL
   BucketName:
