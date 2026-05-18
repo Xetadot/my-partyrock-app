@@ -304,19 +304,20 @@
 
 <script>
 // ===== CONFIG =====
+const API_BASE = '__API_URL__';
 const ENDPOINTS = {
-    budget_analysis_and_recommendations: '__URL_BUDGET__',
-    travel_overview: '__URL_OVERVIEW__',
-    transport_and_accessibility: '__URL_TRANSPORT__',
-    government_services_and_entry_requirements: '__URL_GOVERNMENT__',
-    estimated_cost_breakdown: '__URL_COST__',
-    detailed_itinerary: '__URL_ITINERARY__',
-    government_travel_subsidies_and_benefits: '__URL_SUBSIDIES__',
-    safety_legal_and_traveler_tips: '__URL_SAFETY__',
-    chat_with_local_malaysian_friend: '__URL_CHAT__',
-    image: '__URL_IMAGE__',
-    travel_moments: '__URL_MOMENTS__',
-    travel_summary: '__URL_SUMMARY__',
+    budget_analysis_and_recommendations: API_BASE + '/budget-analysis',
+    travel_overview: API_BASE + '/travel-overview',
+    transport_and_accessibility: API_BASE + '/transport',
+    government_services_and_entry_requirements: API_BASE + '/government-services',
+    estimated_cost_breakdown: API_BASE + '/cost-breakdown',
+    detailed_itinerary: API_BASE + '/itinerary',
+    government_travel_subsidies_and_benefits: API_BASE + '/subsidies',
+    safety_legal_and_traveler_tips: API_BASE + '/safety-tips',
+    chat_with_local_malaysian_friend: API_BASE + '/chat',
+    image: API_BASE + '/image',
+    travel_moments: API_BASE + '/moments',
+    travel_summary: API_BASE + '/summary',
 };
 
 // ===== HARMFUL INPUT FILTER =====

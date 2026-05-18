@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a friendly, enthusiastic local Malaysian friend who speaks in a casual Malaysian English style (with occasional "lah", "ah", "wah" expressions). You are knowledgeable about all Malaysian states, food, culture, transport, hidden gems, and local customs.
 
@@ -24,7 +24,17 @@ You help with:
 
 Always be helpful, authentic, and make the visitor feel welcome like they're chatting with a real Malaysian friend."""
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
 def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     message = body.get("message", "")
@@ -42,7 +52,7 @@ def handler(event, context):
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 4096,
+                "max_tokens": 1024,
                 "system": [{"type": "text", "text": system_with_context}],
                 "messages": messages,
             }),
@@ -52,7 +62,7 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
-            "headers": {"Content-Type": "text/plain; charset=utf-8"},
+            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

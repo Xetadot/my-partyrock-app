@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a GovTech benefits advisor. Provide comprehensive, realistic information about Malaysian government subsidies, discounts, and travel benefits available to different groups.
 
@@ -36,7 +36,17 @@ For Families: Child discounts (under 12), family packages at theme parks
 
 Format with clear sections, specific RM amounts where applicable, and practical instructions."""
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
 def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
@@ -61,7 +71,7 @@ Please provide comprehensive information about government subsidies and travel b
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 4096,
+                "max_tokens": 1024,
                 "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),
@@ -71,7 +81,7 @@ Please provide comprehensive information about government subsidies and travel b
 
         return {
             "statusCode": 200,
-            "headers": {"Content-Type": "text/plain; charset=utf-8"},
+            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

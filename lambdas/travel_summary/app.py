@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a travel summary assistant. Create a personalized travel summary based on the user's specific inputs. Do NOT include general knowledge - only summarize what's relevant to their trip.
 
@@ -28,7 +28,17 @@ For weather, consider:
 
 Return ONLY valid JSON, no other text."""
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
 def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     city = body.get("city", "")
@@ -55,7 +65,7 @@ Return JSON only with summary, highlights, budget_verdict, best_time_to_visit, w
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 4096,
+                "max_tokens": 1024,
                 "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),
@@ -72,12 +82,12 @@ Return JSON only with summary, highlights, budget_verdict, best_time_to_visit, w
 
         return {
             "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps(summary),
         }
     except Exception as e:
         return {
             "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps({"error": str(e)}),
         }

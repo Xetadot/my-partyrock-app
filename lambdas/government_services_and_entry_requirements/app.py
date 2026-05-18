@@ -1,8 +1,8 @@
 import json
 import boto3
 
-BEDROCK_MODEL_ID = "global.anthropic.claude-opus-4-6-v1"
-bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-1")
+BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
+bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
 SYSTEM_PROMPT = """You are a GovTech immigration and services officer. Provide essential government information for travelers to Malaysia.
 
@@ -38,7 +38,17 @@ Provide structured information:
 
 Format with clear headers and bullet points."""
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
 def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
@@ -58,7 +68,7 @@ Please provide essential government services and entry requirements information.
             modelId=BEDROCK_MODEL_ID,
             body=json.dumps({
                 "anthropic_version": "bedrock-2023-05-31",
-                "max_tokens": 4096,
+                "max_tokens": 1024,
                 "system": [{"type": "text", "text": SYSTEM_PROMPT}],
                 "messages": [{"role": "user", "content": user_message}],
             }),
@@ -68,7 +78,7 @@ Please provide essential government services and entry requirements information.
 
         return {
             "statusCode": 200,
-            "headers": {"Content-Type": "text/plain; charset=utf-8"},
+            "headers": {**CORS_HEADERS, "Content-Type": "text/plain; charset=utf-8"},
             "body": text,
         }
     except Exception as e:

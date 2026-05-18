@@ -4,7 +4,17 @@ import boto3
 
 bedrock = boto3.client("bedrock-runtime", region_name="us-west-2")
 
+CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Methods": "POST,OPTIONS",
+}
+
+
 def handler(event, context):
+    if event.get("httpMethod") == "OPTIONS":
+        return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
+
     body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     specific_place = body.get("specific_place", "")
@@ -37,7 +47,7 @@ def handler(event, context):
 
     try:
         response = bedrock.invoke_model(
-            modelId="stability.stable-image-ultra-v1:1",
+            modelId="stability.stable-image-core-v1:1",
             body=request_body,
             accept="application/json",
             contentType="application/json",
@@ -47,13 +57,13 @@ def handler(event, context):
 
         return {
             "statusCode": 200,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps({"image": image_base64}),
         }
     except Exception as e:
         import traceback
         return {
             "statusCode": 500,
-            "headers": {"Content-Type": "application/json"},
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
             "body": json.dumps({"error": str(e), "trace": traceback.format_exc()}),
         }
