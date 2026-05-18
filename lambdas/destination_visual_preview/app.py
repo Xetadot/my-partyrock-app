@@ -5,7 +5,7 @@ import boto3
 bedrock = boto3.client("bedrock-runtime", region_name="us-west-2")
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     specific_place = body.get("specific_place", "")
     image_prompt_input = body.get("image_prompt", "")

@@ -17,7 +17,7 @@ Return ONLY valid JSON array, no other text. Example:
 [{"title":"Sunset at KLCC Park","location":"KLCC Park, KL","author":"Ahmad Razali","date":"2024","search_query":"klcc park sunset kuala lumpur"}]"""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     city = body.get("city", "")
     interests = body.get("interests", "")

@@ -23,7 +23,7 @@ Provide:
 Be honest, practical, and constructive."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     budget = body.get("budget", "")
     currency = body.get("currency", "Ringgit Malaysia")
     num_travelers = body.get("num_travelers", "")

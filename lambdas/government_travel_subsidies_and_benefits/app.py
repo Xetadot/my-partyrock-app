@@ -37,7 +37,7 @@ For Families: Child discounts (under 12), family packages at theme parks
 Format with clear sections, specific RM amounts where applicable, and practical instructions."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     budget = body.get("budget", "")

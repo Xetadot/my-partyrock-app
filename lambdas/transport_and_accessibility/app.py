@@ -35,7 +35,7 @@ Provide:
 Format clearly with sections and bullet points."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     traveler_group = body.get("traveler_group", "Adult")

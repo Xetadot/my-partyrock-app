@@ -39,7 +39,7 @@ Provide structured information:
 Format with clear headers and bullet points."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     purpose = body.get("purpose", "")

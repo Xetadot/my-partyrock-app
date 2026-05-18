@@ -44,7 +44,7 @@ For Mixed Groups: Coordination tips, inclusive planning
 Format with clear sections and bullet points. Be practical and respectful."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     traveler_group = body.get("traveler_group", "Adult")

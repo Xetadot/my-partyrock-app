@@ -25,7 +25,7 @@ You help with:
 Always be helpful, authentic, and make the visitor feel welcome like they're chatting with a real Malaysian friend."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     message = body.get("message", "")
     history = body.get("history", [])

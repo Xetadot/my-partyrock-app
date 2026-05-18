@@ -31,7 +31,7 @@ ALLOCATION GUIDELINES:
 Adjust percentages based on traveler group, budget level, and state. Provide brief notes explaining the allocation strategy below the table."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "")
     city = body.get("city", "")
     budget = body.get("budget", "")

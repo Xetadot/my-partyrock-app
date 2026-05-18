@@ -29,7 +29,7 @@ For weather, consider:
 Return ONLY valid JSON, no other text."""
 
 def handler(event, context):
-body = json.loads(event.get("body", "{}"))
+    body = json.loads(event.get("body", "{}"))
     state = body.get("state", "Selangor")
     city = body.get("city", "")
     budget = body.get("budget", "")
