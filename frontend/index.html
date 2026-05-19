@@ -913,17 +913,15 @@ async function fetchAccommodations(inputs) {
         accoms.forEach((a, i) => {
             const imgUrl = imageUrls[i] || `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(a.name)}`;
             const url = a.url || '#';
-            html += `<div class="accom-card" data-accom-name="${a.name}" data-accom-lat="${a.lat||''}" data-accom-lng="${a.lng||''}"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source} · 📍 Click to show on map</div></div></div>`;
+            html += `<div class="accom-card" data-accom-name="${a.name}" data-accom-lat="${a.lat||''}" data-accom-lng="${a.lng||''}" data-accom-url="${a.url||''}"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via Agoda · � Click to book</div></div></div>`;
         });
         html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'accom-scroll\',220)">›</button></div>';
         panel.innerHTML = html;
         // Add click handlers - use pre-geocoded coordinates
         panel.querySelectorAll('.accom-card').forEach(card => {
             card.addEventListener('click', () => {
-                const name = card.dataset.accomName;
-                const lat = parseFloat(card.dataset.accomLat);
-                const lng = parseFloat(card.dataset.accomLng);
-                showAccomOnMap(name, lat, lng);
+                const url = card.dataset.accomUrl;
+                if (url) window.open(url, '_blank');
             });
         });
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
