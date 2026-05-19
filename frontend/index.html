@@ -361,10 +361,14 @@ const ENDPOINTS = {
 };
 
 // ===== HARMFUL INPUT FILTER =====
-const BLOCKED_TERMS = ['hitler','nazi','terrorism','terrorist','bomb','kill','murder','genocide','porn','nude','sex','drugs','cocaine','heroin','weapon','gun','assault','rape','suicide bomb','isis','al-qaeda','white supremacy','kkk','ethnic cleansing'];
+const BLOCKED_TERMS = ['hitler','nazi','terrorism','terrorist','bomb','kill','murder','genocide','porn','nude','sex','drugs','cocaine','heroin','weapon','gun','assault','rape','suicide bomb','isis','al-qaeda','white supremacy','kkk','ethnic cleansing','violence','blood','gore','nudity','naked','hentai','xxx','fetish','extremist','supremacist','jihad','massacre','torture','pedophil','child abuse','trafficking','meth','fentanyl','explosive'];
+const BLOCKED_PATTERNS = [/\b(kill|murder|attack|shoot|stab)\s+(people|person|everyone)/i, /how\s+to\s+(make|build)\s+(bomb|weapon|drug)/i, /\b(adolf|mussolini|stalin|osama)\b/i];
 function isHarmfulInput(text) {
+    if (!text) return false;
     const lower = text.toLowerCase();
-    return BLOCKED_TERMS.some(term => lower.includes(term));
+    if (BLOCKED_TERMS.some(term => lower.includes(term))) return true;
+    if (BLOCKED_PATTERNS.some(pat => pat.test(text))) return true;
+    return false;
 }
 
 // ===== STATE DATA =====
@@ -510,7 +514,7 @@ function closeMomentVideo() {
 let map, markers = [], currentFilter = 'all';
 function initMap() {
     map = L.map('map').setView(STATE_COORDS['Selangor'], 12);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap', maxZoom: 18 }).addTo(map);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors, © CARTO', maxZoom: 19, subdomains: 'abcd' }).addTo(map);
 }
 function updateMap(state) {
     const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
@@ -734,19 +738,24 @@ function drawDayRoute(dayIndex) {
     else if (markers.length === 1 && dayPoints[0].lat) map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
 }
 
-// Geocode locations using Nominatim
+// Geocode locations using Photon (Komoot) - better for businesses
 async function geocodeLocations(locations, state) {
     const results = [];
     for (const loc of locations) {
         try {
-            const query = encodeURIComponent(loc.name + ', ' + (loc.city || state) + ', Malaysia');
-            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`);
+            const query = encodeURIComponent(loc.name + ' ' + (loc.city || state) + ' Malaysia');
+            const res = await fetch(`https://photon.komoot.io/api/?q=${query}&limit=1&lang=en`);
             const data = await res.json();
-            if (data && data[0]) {
-                results.push({ ...loc, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
-            } else { results.push(loc); }
-            await new Promise(r => setTimeout(r, 1100));
-        } catch(e) { results.push(loc); }
+            if (data.features && data.features.length > 0) {
+                const coords = data.features[0].geometry.coordinates;
+                results.push({ ...loc, lat: coords[1], lng: coords[0] });
+            } else {
+                results.push(loc);
+            }
+            await new Promise(r => setTimeout(r, 300));
+        } catch(e) {
+            results.push(loc);
+        }
     }
     return results;
 }

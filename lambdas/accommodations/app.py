@@ -6,20 +6,31 @@ import urllib.parse
 BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
 
-SYSTEM_PROMPT = """You are a travel accommodation expert for Malaysia. Given a destination, find 5 real, well-known accommodations in that area.
+SYSTEM_PROMPT = """You are a travel accommodation expert for Malaysia. Given a destination, find 8 real accommodations that CURRENTLY EXIST and are OPERATIONAL in that area.
 
-IMPORTANT: Only suggest hotels/hostels that are FAMOUS and WELL-KNOWN in the area. Use major chain hotels or popular landmarks that would appear on any map service. Avoid obscure or recently closed places.
+CRITICAL RULES:
+- ONLY suggest hotels that are CURRENTLY OPERATING (not closed/demolished)
+- Use EXACT official hotel names as they appear on booking sites
+- Mix: 2 budget (under RM150), 3 mid-range (RM150-400), 3 luxury (RM400+)
+- Include the EXACT street/area name
 
-Return ONLY a JSON array with exactly 5 objects. Each object must have:
-- "name": real hotel/hostel/resort name (use the official name)
-- "type": "Hotel" or "Resort" or "Hostel" or "Homestay"
+Return ONLY a JSON array with exactly 8 objects:
+- "name": exact official hotel name (e.g., "Hilton Kuala Lumpur", "Tune Hotel Georgetown")
+- "type": "Hotel" or "Resort" or "Hostel" or "Boutique"
 - "rating": rating out of 5 (e.g., "4.5")
-- "price_range": approximate price per night in MYR (e.g., "RM120-180")
-- "address": specific area/street name in the city
-- "source": "Expedia" or "TripAdvisor" or "Trip.com"
-- "url": booking URL (https://www.tripadvisor.com/Hotels-g-CITY or https://www.expedia.com/CITY-Hotels.d-Hotel-Search)
+- "price_range": price per night in MYR (e.g., "RM120-180")
+- "address": specific street/area (e.g., "Jalan Sultan Ismail, KL")
+- "source": alternate between "Expedia", "TripAdvisor", "Trip.com"
+- "url": real URL (e.g., "https://www.tripadvisor.com/Hotel_Review-HOTELNAME")
 
-ONLY use well-known hotels like: Shangri-La, Hilton, Holiday Inn, Hard Rock, Sunway, Dorsett, DoubleTree, Marriott, Hyatt, Tune Hotel, OYO, etc. or famous local boutique hotels.
+EXAMPLES of REAL hotels by state:
+- KL/Selangor: Hilton KL, Shangri-La KL, Traders Hotel, Tune Hotel KLIA, Hotel Istana
+- Penang: Eastern & Oriental Hotel, Bayview Hotel Georgetown, Hard Rock Hotel Penang, Tune Hotel Penang
+- Langkawi: The Datai, Meritus Pelangi Beach, Sheraton Langkawi
+- Melaka: Hatten Hotel, Casa del Rio, Holiday Inn Melaka
+- Sabah: Shangri-La Tanjung Aru, Hyatt Regency Kinabalu, Le Meridien KK
+- Johor: Thistle JB, DoubleTree JB, Legoland Hotel
+
 Return ONLY valid JSON array, no other text."""
 
 CORS_HEADERS = {
@@ -29,16 +40,18 @@ CORS_HEADERS = {
 }
 
 
-def geocode(name, city):
-    """Geocode a place using Nominatim. Returns (lat, lng) or None."""
-    q = f"{name}, {city}, Malaysia"
+def geocode_photon(name, city):
+    """Geocode using Photon (Komoot) - better for businesses/hotels."""
+    q = f"{name} {city} Malaysia"
     try:
-        url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(q)}&format=json&limit=1&countrycodes=my"
+        url = f"https://photon.komoot.io/api/?q={urllib.parse.quote(q)}&limit=1&lang=en"
         req = urllib.request.Request(url, headers={"User-Agent": "SmartTravelMalaysia/1.0"})
         with urllib.request.urlopen(req, timeout=5) as resp:
             data = json.loads(resp.read())
-            if data and len(data) > 0:
-                return float(data[0]["lat"]), float(data[0]["lon"])
+            if data.get("features") and len(data["features"]) > 0:
+                coords = data["features"][0]["geometry"]["coordinates"]
+                # Photon returns [lng, lat]
+                return coords[1], coords[0]
     except Exception:
         pass
     return None
@@ -55,8 +68,18 @@ def handler(event, context):
     budget = body.get("budget", "")
     traveler_group = body.get("traveler_group", "Adult")
 
+    # Input safety check
+    all_input = f"{state} {city} {budget} {traveler_group}".lower()
+    blocked = ['hitler','nazi','terrorism','bomb','kill','murder','genocide','porn','nude','sex','drugs','cocaine','weapon','gun','rape','isis','gore','blood','violence','torture','abuse']
+    if any(term in all_input for term in blocked):
+        return {
+            "statusCode": 400,
+            "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
+            "body": json.dumps({"error": "Input contains inappropriate content. Please modify your request.", "accommodations": []}),
+        }
+
     location = city if city else state
-    user_message = f"Find 5 real, well-known accommodations in {location}, Malaysia. Budget: RM{budget}. Group: {traveler_group}. Return JSON array only."
+    user_message = f"Find 8 real, currently operating accommodations in {location}, Malaysia. Budget: RM{budget}. Group: {traveler_group}. Return JSON array only."
 
     try:
         response = bedrock.invoke_model(
@@ -78,16 +101,14 @@ def handler(event, context):
         except (ValueError, json.JSONDecodeError):
             accommodations = []
 
-        # Geocode each accommodation, only keep ones we can find
+        # Geocode each accommodation using Photon, only keep found ones
         validated = []
         for accom in accommodations:
-            coords = geocode(accom["name"], location)
+            coords = geocode_photon(accom.get("name", ""), location)
             if coords:
                 accom["lat"] = coords[0]
                 accom["lng"] = coords[1]
                 validated.append(accom)
-            if len(validated) >= 5:
-                break
 
         return {
             "statusCode": 200,
