@@ -320,6 +320,26 @@ Resources:
             Path: /summary
             Method: OPTIONS
 
+  AccommodationsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/accommodations/
+      Handler: app.handler
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /accommodations
+            Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /accommodations
+            Method: OPTIONS
+
   # ============================================================
   # S3 Bucket for Frontend Static Website
   # ============================================================

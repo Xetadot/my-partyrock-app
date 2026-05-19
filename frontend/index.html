@@ -92,7 +92,7 @@
         .results-layout{display:grid;grid-template-columns:1fr 8px 1fr;gap:0;align-items:start}
 
         /* Resize handle */
-        .resize-handle{width:8px;cursor:col-resize;background:#e8ecf0;border-radius:4px;position:relative;min-height:400px;transition:background 0.2s}
+        .resize-handle{width:8px;cursor:col-resize;background:#e8ecf0;border-radius:4px;position:relative;align-self:stretch;min-height:100%;transition:background 0.2s}
         .resize-handle:hover,.resize-handle.dragging{background:#0057a0}
         .resize-handle::after{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:3px;height:40px;border-left:1px solid #aaa;border-right:1px solid #aaa}
         .results-column{display:flex;flex-direction:column;gap:14px}
@@ -159,13 +159,30 @@
         @media(max-width:768px){.hero-title{font-size:2rem}.search-card{padding:18px}.form-grid{grid-template-columns:1fr}.chatbot-window{width:calc(100% - 32px);right:16px;bottom:84px;height:60vh}.topbar{padding:0 15px}.topbar-brand{font-size:0.9rem}}
 
         /* Moments AI photos */
-        .moments-ai-grid{display:flex;gap:12px;overflow-x:auto;padding:8px 0}
-        .moments-ai-grid::-webkit-scrollbar{height:5px}
-        .moments-ai-grid::-webkit-scrollbar-thumb{background:#ccc;border-radius:3px}
+        .moments-ai-grid{display:flex;gap:12px;overflow-x:auto;padding:8px 0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none;position:relative}
+        .moments-ai-grid::-webkit-scrollbar{display:none}
         .moment-ai-card{min-width:180px;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;background:#fff;border:1px solid #eef1f5}
         .moment-ai-card img{width:100%;height:130px;object-fit:cover}
         .moment-ai-card .meta{padding:8px 10px;font-size:0.68rem;color:#666;line-height:1.4}
         .moment-ai-card .meta strong{color:#333;display:block;font-size:0.75rem;margin-bottom:2px}
+        .widget-slider-wrapper{position:relative}
+        .widget-slider-btn{position:absolute;top:50%;transform:translateY(-50%);width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.95);border:1px solid #e0e5ec;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:0.85rem;color:#333;box-shadow:0 2px 6px rgba(0,0,0,0.1);z-index:5;transition:all 0.2s}
+        .widget-slider-btn:hover{background:#0057a0;color:#fff}
+        .widget-slider-btn.left{left:0}
+        .widget-slider-btn.right{right:0}
+
+        /* Accommodations */
+        .accom-grid{display:flex;gap:12px;overflow-x:auto;padding:8px 0;scroll-behavior:smooth;-ms-overflow-style:none;scrollbar-width:none}
+        .accom-grid::-webkit-scrollbar{display:none}
+        .accom-card{min-width:200px;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.08);flex-shrink:0;background:#fff;border:1px solid #eef1f5;cursor:pointer;transition:transform 0.2s}
+        .accom-card:hover{transform:translateY(-3px);box-shadow:0 4px 12px rgba(0,0,0,0.12)}
+        .accom-card img{width:100%;height:120px;object-fit:cover}
+        .accom-card .accom-info{padding:10px}
+        .accom-card .accom-info h5{font-size:0.78rem;font-weight:600;color:#333;margin-bottom:3px}
+        .accom-card .accom-info .accom-rating{font-size:0.72rem;color:#f5a623;margin-bottom:2px}
+        .accom-card .accom-info .accom-price{font-size:0.72rem;color:#0057a0;font-weight:600;margin-bottom:2px}
+        .accom-card .accom-info .accom-address{font-size:0.65rem;color:#888}
+        .accom-card .accom-info .accom-source{font-size:0.62rem;color:#aaa;margin-top:3px}
 
         /* Summary weather */
         .summary-content{padding:0}
@@ -276,6 +293,7 @@
         <div class="results-column">
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🖼️ Destination Preview</h3><div class="spinner" id="spinner-image"></div><span class="toggle-icon">▼</span></div><div class="result-card-body image-body" id="output-image"><p style="color:#999;">Generate your plan to see a preview.</p></div></div>
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>📸 Destination Moments</h3><div class="spinner" id="spinner-moments-ai"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-moments-ai" style="padding:12px"><p style="color:#999;">Photos will appear here after generating.</p></div></div>
+            <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🏨 Accommodations</h3><div class="spinner" id="spinner-accommodations"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-accommodations" style="padding:12px"><p style="color:#999;">Accommodation options will appear here.</p></div></div>
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>💰 Budget Analysis</h3><div class="spinner" id="spinner-budget"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-budget"></div></div>
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🌍 Travel Overview</h3><div class="spinner" id="spinner-overview"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-overview"></div></div>
             <div class="result-card"><div class="result-card-header" onclick="toggleCard(this)"><h3>🚇 Transport</h3><div class="spinner" id="spinner-transport"></div><span class="toggle-icon">▼</span></div><div class="result-card-body" id="output-transport"></div></div>
@@ -339,6 +357,7 @@ const ENDPOINTS = {
     image: API_BASE + '/image',
     travel_moments: API_BASE + '/moments',
     travel_summary: API_BASE + '/summary',
+    accommodations: API_BASE + '/accommodations',
 };
 
 // ===== HARMFUL INPUT FILTER =====
@@ -742,8 +761,7 @@ async function fetchMomentsAI(inputs) {
         const photos = data.photos || [];
         if (photos.length === 0) { panel.innerHTML = '<p style="color:#999">No photos found.</p>'; spinner.style.display='none'; return; }
 
-        // Fetch real images from Pexels for each photo
-        let html = '<div class="moments-ai-grid">';
+        let html = '<div class="widget-slider-wrapper"><button class="widget-slider-btn left" onclick="scrollSlider(\'moments-ai-scroll\',-200)">‹</button><div class="moments-ai-grid" id="moments-ai-scroll">';
         const imagePromises = photos.map(async (p) => {
             const query = p.search_query || p.title || inputs.state + ' Malaysia';
             try {
@@ -765,7 +783,38 @@ async function fetchMomentsAI(inputs) {
             const photographer = result ? result.photographer : p.author;
             html += `<div class="moment-ai-card"><img src="${imgUrl}" alt="${p.title}" loading="lazy"><div class="meta"><strong>${p.title}</strong>📍 ${p.location}<br>📷 ${photographer} · ${p.date}</div></div>`;
         });
-        html += '</div>';
+        html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'moments-ai-scroll\',200)">›</button></div>';
+        panel.innerHTML = html;
+    } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
+    finally { spinner.style.display = 'none'; }
+}
+
+// ===== ACCOMMODATIONS =====
+async function fetchAccommodations(inputs) {
+    const panel = document.getElementById('output-accommodations'), spinner = document.getElementById('spinner-accommodations');
+    panel.innerHTML = '<p style="color:#999">Finding accommodations...</p>'; panel.classList.remove('collapsed'); spinner.style.display = 'block';
+    try {
+        const r = await fetch(ENDPOINTS.accommodations, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(inputs)});
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        const accoms = data.accommodations || [];
+        if (accoms.length === 0) { panel.innerHTML = '<p style="color:#999">No accommodations found.</p>'; spinner.style.display='none'; return; }
+        const imagePromises = accoms.map(async (a) => {
+            try {
+                const pexRes = await fetch(`https://api.pexels.com/v1/search?query=${encodeURIComponent(a.image_query || a.name + ' hotel')}&per_page=1&orientation=landscape`, { headers: { 'Authorization': PEXELS_KEY } });
+                const pexData = await pexRes.json();
+                if (pexData.photos && pexData.photos[0]) return pexData.photos[0].src.medium;
+            } catch(e) {}
+            return null;
+        });
+        const imageUrls = await Promise.all(imagePromises);
+        let html = '<div class="widget-slider-wrapper"><button class="widget-slider-btn left" onclick="scrollSlider(\'accom-scroll\',-220)">‹</button><div class="accom-grid" id="accom-scroll">';
+        accoms.forEach((a, i) => {
+            const imgUrl = imageUrls[i] || `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(a.name)}`;
+            const url = a.url || '#';
+            html += `<div class="accom-card" onclick="window.open('${url}','_blank')"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source}</div></div></div>`;
+        });
+        html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'accom-scroll\',220)">›</button></div>';
         panel.innerHTML = html;
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
     finally { spinner.style.display = 'none'; }
@@ -823,8 +872,8 @@ function runAll() {
     updateMap(inputs.state);
     document.getElementById('results').scrollIntoView({behavior:'smooth'});
     async function go() {
-        await Promise.allSettled([generateImage(inputs),fetchMomentsAI(inputs),fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations,inputs,'output-budget','spinner-budget')]);
-        await Promise.allSettled([fetchToPanel(ENDPOINTS.travel_overview,inputs,'output-overview','spinner-overview'),fetchToPanel(ENDPOINTS.transport_and_accessibility,inputs,'output-transport','spinner-transport'),fetchToPanel(ENDPOINTS.government_services_and_entry_requirements,inputs,'output-government','spinner-government')]);
+        await Promise.allSettled([generateImage(inputs),fetchMomentsAI(inputs),fetchAccommodations(inputs)]);
+        await Promise.allSettled([fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations,inputs,'output-budget','spinner-budget'),fetchToPanel(ENDPOINTS.travel_overview,inputs,'output-overview','spinner-overview'),fetchToPanel(ENDPOINTS.transport_and_accessibility,inputs,'output-transport','spinner-transport')]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.estimated_cost_breakdown,inputs,'output-cost','spinner-cost'),fetchItinerary(inputs),fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies')]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety'),fetchSummary(inputs)]);
         btn.disabled = false; btn.textContent = '🚀 Generate Travel Plan';
@@ -856,18 +905,49 @@ document.addEventListener('DOMContentLoaded', () => {
     const handle = document.getElementById('resizeHandle');
     const layout = document.querySelector('.results-layout');
     let isDragging = false;
+    const MIN_LEFT = 5, MAX_LEFT = 95, SNAP_MARGIN = 10;
     handle.addEventListener('mousedown', (e) => { isDragging = true; handle.classList.add('dragging'); e.preventDefault(); });
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
         const rect = layout.getBoundingClientRect();
         const offset = e.clientX - rect.left;
         const total = rect.width;
-        const leftPct = Math.max(25, Math.min(75, (offset / total) * 100));
+        let leftPct = (offset / total) * 100;
+        // Clamp
+        leftPct = Math.max(MIN_LEFT, Math.min(MAX_LEFT, leftPct));
         const rightPct = 100 - leftPct - 1;
         layout.style.gridTemplateColumns = `${leftPct}% 8px ${rightPct}%`;
+        // Collapse left column if dragged too far left
+        const leftCol = document.querySelector('.results-column');
+        if (leftPct < SNAP_MARGIN) { leftCol.style.opacity = '0'; leftCol.style.overflow = 'hidden'; }
+        else { leftCol.style.opacity = '1'; leftCol.style.overflow = 'visible'; }
+        // Collapse right column if dragged too far right
+        const rightCol = document.querySelector('.map-column');
+        if (rightPct < SNAP_MARGIN) { rightCol.style.opacity = '0'; rightCol.style.overflow = 'hidden'; }
+        else { rightCol.style.opacity = '1'; rightCol.style.overflow = 'visible'; }
         map.invalidateSize();
     });
-    document.addEventListener('mouseup', () => { isDragging = false; handle.classList.remove('dragging'); });
+    document.addEventListener('mouseup', () => {
+        if (!isDragging) return;
+        isDragging = false; handle.classList.remove('dragging');
+        // Snap back if too far left or right
+        const rect = layout.getBoundingClientRect();
+        const cols = layout.style.gridTemplateColumns;
+        const leftPct = parseFloat(cols);
+        if (leftPct < SNAP_MARGIN) {
+            layout.style.gridTemplateColumns = `${SNAP_MARGIN}% 8px ${100 - SNAP_MARGIN - 1}%`;
+            document.querySelector('.results-column').style.opacity = '0';
+        } else if (leftPct > MAX_LEFT - SNAP_MARGIN) {
+            layout.style.gridTemplateColumns = `${MAX_LEFT - SNAP_MARGIN}% 8px ${SNAP_MARGIN}%`;
+            document.querySelector('.map-column').style.opacity = '0';
+        } else {
+            document.querySelector('.results-column').style.opacity = '1';
+            document.querySelector('.results-column').style.overflow = 'visible';
+            document.querySelector('.map-column').style.opacity = '1';
+            document.querySelector('.map-column').style.overflow = 'visible';
+        }
+        setTimeout(() => map.invalidateSize(), 300);
+    });
 });
 </script>
 </body>

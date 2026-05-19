@@ -32,7 +32,9 @@ Provide:
 - Typical daily transport costs
 - Budget-friendly options
 
-Format clearly with sections and bullet points."""
+Format clearly with sections and bullet points.
+
+IMPORTANT: Do NOT generate any itinerary or day-by-day plan. Only provide transport information."""
 
 CORS_HEADERS = {
     "Access-Control-Allow-Origin": "*",
