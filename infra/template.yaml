@@ -50,6 +50,12 @@ Resources:
                   - aws-marketplace:Subscribe
                   - aws-marketplace:Unsubscribe
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - geo:GetMap*
+                  - geo:SearchPlaceIndex*
+                  - geo:GetPlace
+                Resource: "*"
 
   # ============================================================
   # API Gateway
@@ -339,6 +345,44 @@ Resources:
           Properties:
             RestApiId: !Ref AppApi
             Path: /accommodations
+            Method: OPTIONS
+
+  # ============================================================
+  # Amazon Location Service (Map + Places)
+  # ============================================================
+  TravelMap:
+    Type: AWS::Location::Map
+    Properties:
+      MapName: SmartTravelMalaysiaMap
+      Configuration:
+        Style: VectorHereExplore
+      PricingPlan: RequestBasedUsage
+
+  TravelPlaceIndex:
+    Type: AWS::Location::PlaceIndex
+    Properties:
+      IndexName: SmartTravelMalaysiaPlaces
+      DataSource: Here
+      PricingPlan: RequestBasedUsage
+
+  PlacesSearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/places_search/
+      Handler: app.handler
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /places
+            Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /places
             Method: OPTIONS
 
   # ============================================================
