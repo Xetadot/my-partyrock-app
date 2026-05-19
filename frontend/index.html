@@ -874,8 +874,8 @@ function runAll() {
     async function go() {
         await Promise.allSettled([generateImage(inputs),fetchMomentsAI(inputs),fetchAccommodations(inputs)]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations,inputs,'output-budget','spinner-budget'),fetchToPanel(ENDPOINTS.travel_overview,inputs,'output-overview','spinner-overview'),fetchToPanel(ENDPOINTS.transport_and_accessibility,inputs,'output-transport','spinner-transport')]);
-        await Promise.allSettled([fetchToPanel(ENDPOINTS.estimated_cost_breakdown,inputs,'output-cost','spinner-cost'),fetchItinerary(inputs),fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies')]);
-        await Promise.allSettled([fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety'),fetchSummary(inputs)]);
+        await Promise.allSettled([fetchToPanel(ENDPOINTS.estimated_cost_breakdown,inputs,'output-cost','spinner-cost'),fetchItinerary(inputs),fetchToPanel(ENDPOINTS.government_services_and_entry_requirements,inputs,'output-government','spinner-government')]);
+        await Promise.allSettled([fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies'),fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety'),fetchSummary(inputs)]);
         btn.disabled = false; btn.textContent = '🚀 Generate Travel Plan';
     }
     go();
