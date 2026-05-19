@@ -47,7 +47,6 @@ def geocode_photon(name, city):
             IndexName="SmartTravelMalaysiaPlaces",
             Text=q,
             MaxResults=1,
-            FilterCountries=["MYS"],
         )
         results = response.get("Results", [])
         if results:

@@ -34,7 +34,6 @@ def handler(event, context):
             Text=query,
             MaxResults=1,
             BiasPosition=[bias_lng, bias_lat],
-            FilterCountries=["MYS"],
         )
 
         results = []
