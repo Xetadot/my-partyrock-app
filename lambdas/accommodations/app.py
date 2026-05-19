@@ -27,7 +27,8 @@ CORS_HEADERS = {
 
 
 def handler(event, context):
-    if event.get("requestContext",{}).get("http",{}).get("method","") == "OPTIONS":
+    method = event.get("httpMethod") or event.get("requestContext",{}).get("http",{}).get("method","")
+    if method == "OPTIONS":
         return {"statusCode": 200, "headers": CORS_HEADERS, "body": ""}
 
     body = json.loads(event.get("body", "{}"))
