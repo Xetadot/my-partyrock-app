@@ -622,17 +622,28 @@ let itineraryRoute = null;
 async function fetchItinerary(inputs) {
     const panel = document.getElementById('output-itinerary'), spinner = document.getElementById('spinner-itinerary');
     panel.innerHTML = ''; panel.classList.remove('collapsed'); spinner.style.display = 'block';
+    window.itineraryLocations = [];
     try {
         const r = await fetch(ENDPOINTS.detailed_itinerary, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(inputs)});
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const text = await r.text();
-        // Parse into days
-        const days = parseItineraryDays(text);
+        // Parse locations section
+        const locations = parseLocationsFromItinerary(text);
+        // Parse days (exclude LOCATIONS section from display)
+        const displayText = text.split('## LOCATIONS')[0];
+        const days = parseItineraryDays(displayText);
         if (days.length === 0) {
-            // Fallback: render as normal markdown
-            panel.innerHTML = text.split('\n').map(l => `<span class="md-line">${renderMarkdownLine(l)}</span>`).join('');
+            panel.innerHTML = displayText.split('\n').map(l => `<span class="md-line">${renderMarkdownLine(l)}</span>`).join('');
         } else {
             renderItineraryDays(panel, days);
+        }
+        // Geocode locations in background
+        if (locations.length > 0) {
+            const state = inputs.state;
+            geocodeLocations(locations, state).then(geoLocs => {
+                window.itineraryLocations = geoLocs;
+                drawDayRoute(0);
+            });
         }
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
     finally { spinner.style.display = 'none'; }
@@ -703,32 +714,71 @@ function showDay(index) {
 }
 
 function drawDayRoute(dayIndex) {
-    // Clear previous day markers
+    // Clear previous markers
     if (itineraryRoute) { map.removeLayer(itineraryRoute); itineraryRoute = null; }
     markers.forEach(m => map.removeLayer(m)); markers = [];
-    // Get POIs for current state
-    const state = document.getElementById('state').value;
-    const pois = POI_DATA[state];
-    if (!pois || !pois.attractions) return;
-    // Combine all location types
-    const allPoints = [...pois.attractions, ...(pois.food || []).slice(0,2), ...(pois.shopping || []).slice(0,1)];
+    if (!window.itineraryLocations || window.itineraryLocations.length === 0) return;
     const totalDays = document.querySelectorAll('.day-tab').length || 1;
-    const perDay = Math.ceil(allPoints.length / totalDays);
+    const perDay = Math.ceil(window.itineraryLocations.length / totalDays);
     const start = dayIndex * perDay;
-    const dayPoints = allPoints.slice(start, start + perDay);
+    const dayPoints = window.itineraryLocations.slice(start, start + perDay);
     if (dayPoints.length === 0) return;
-    // Pin each location (no route line)
     dayPoints.forEach((p, i) => {
+        if (!p.lat || !p.lng) return;
         const icon = L.divIcon({ html: `<div style="background:#0057a0;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${i+1}</div>`, iconSize: [26,26], className: '' });
-        const m = L.marker([p.lat, p.lng], { icon }).addTo(map).bindPopup(`<b>${i+1}. ${p.name}</b>`);
+        const m = L.marker([p.lat, p.lng], { icon }).addTo(map);
+        m.bindPopup(`<div style="min-width:160px;font-family:Poppins,sans-serif"><strong style="font-size:0.85rem">${i+1}. ${p.name}</strong><br><span style="font-size:0.72rem;color:#666">📍 ${p.category} · ${p.city}</span></div>`);
         markers.push(m);
     });
-    // Fit map to show all pins
-    if (markers.length > 1) {
-        map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
-    } else {
-        map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
+    if (markers.length > 1) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+    else if (markers.length === 1 && dayPoints[0].lat) map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
+}
+
+// Geocode locations using Nominatim
+async function geocodeLocations(locations, state) {
+    const results = [];
+    for (const loc of locations) {
+        try {
+            const query = encodeURIComponent(loc.name + ', ' + (loc.city || state) + ', Malaysia');
+            const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`);
+            const data = await res.json();
+            if (data && data[0]) {
+                results.push({ ...loc, lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) });
+            } else { results.push(loc); }
+            await new Promise(r => setTimeout(r, 1100));
+        } catch(e) { results.push(loc); }
     }
+    return results;
+}
+
+function parseLocationsFromItinerary(text) {
+    const locations = [];
+    const locSection = text.split('## LOCATIONS');
+    if (locSection.length < 2) return locations;
+    const lines = locSection[1].split('\n');
+    for (const line of lines) {
+        const match = line.match(/^-\s*(.+?)\s*\|\s*(.+?)\s*\|\s*(.+)/);
+        if (match) locations.push({ name: match[1].trim(), category: match[2].trim(), city: match[3].trim() });
+    }
+    return locations;
+}
+
+// Show accommodation on map
+function showAccomOnMap(name, city) {
+    const query = encodeURIComponent(name + ', ' + city + ', Malaysia');
+    fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`)
+        .then(r => r.json())
+        .then(data => {
+            if (data && data[0]) {
+                const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+                map.setView([lat, lng], 16);
+                markers.forEach(m => map.removeLayer(m)); markers = [];
+                const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🏨</div>', iconSize: [30,30], className: '' });
+                const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>🏨 ${name}</b><br><span style="font-size:0.75rem">${city}, Malaysia</span>`).openPopup();
+                markers.push(m);
+                document.getElementById('results').scrollIntoView({behavior:'smooth'});
+            }
+        });
 }
 
 // ===== IMAGE (with harmful input check) =====
@@ -812,7 +862,7 @@ async function fetchAccommodations(inputs) {
         accoms.forEach((a, i) => {
             const imgUrl = imageUrls[i] || `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(a.name)}`;
             const url = a.url || '#';
-            html += `<div class="accom-card" onclick="window.open('${url}','_blank')"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source}</div></div></div>`;
+            html += `<div class="accom-card" onclick="showAccomOnMap('${a.name.replace(/'/g,"\\'")}','${(a.address||'').replace(/'/g,"\\'")}')" title="Click to show on map"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source} · 📍 Show on map</div></div></div>`;
         });
         html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'accom-scroll\',220)">›</button></div>';
         panel.innerHTML = html;
