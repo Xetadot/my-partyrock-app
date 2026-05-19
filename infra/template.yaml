@@ -355,13 +355,15 @@ Resources:
     Properties:
       MapName: SmartTravelMalaysiaMap
       Configuration:
-        Style: VectorGrabStandardLight
+        Style: VectorHereExplore
+      PricingPlan: RequestBasedUsage
 
   TravelPlaceIndex:
     Type: AWS::Location::PlaceIndex
     Properties:
       IndexName: SmartTravelMalaysiaPlaces
-      DataSource: Grab
+      DataSource: Here
+      PricingPlan: RequestBasedUsage
 
   PlacesSearchFunction:
     Type: AWS::Serverless::Function
