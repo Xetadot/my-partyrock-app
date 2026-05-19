@@ -766,19 +766,43 @@ function parseLocationsFromItinerary(text) {
 // Show accommodation on map
 function showAccomOnMap(name, city) {
     const query = encodeURIComponent(name + ', ' + city + ', Malaysia');
-    fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`)
+    // Show loading state
+    const mapEl = document.getElementById('map');
+    mapEl.style.outline = '3px solid #0057a0';
+    setTimeout(() => { mapEl.style.outline = 'none'; }, 2000);
+
+    fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=my`)
         .then(r => r.json())
         .then(data => {
-            if (data && data[0]) {
+            if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
                 map.setView([lat, lng], 16);
                 markers.forEach(m => map.removeLayer(m)); markers = [];
-                const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🏨</div>', iconSize: [30,30], className: '' });
-                const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>🏨 ${name}</b><br><span style="font-size:0.75rem">${city}, Malaysia</span>`).openPopup();
+                const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)">🏨</div>', iconSize: [32,32], className: '' });
+                const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<div style="font-family:Poppins,sans-serif"><strong>🏨 ${name}</strong><br><span style="font-size:0.75rem;color:#666">${city}</span></div>`).openPopup();
                 markers.push(m);
-                document.getElementById('results').scrollIntoView({behavior:'smooth'});
+                // Scroll to map
+                document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
+            } else {
+                // Fallback: try without country code
+                fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ' Malaysia')}&format=json&limit=1`)
+                    .then(r => r.json())
+                    .then(data2 => {
+                        if (data2 && data2.length > 0) {
+                            const lat = parseFloat(data2[0].lat), lng = parseFloat(data2[0].lon);
+                            map.setView([lat, lng], 15);
+                            markers.forEach(m => map.removeLayer(m)); markers = [];
+                            const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)">🏨</div>', iconSize: [32,32], className: '' });
+                            const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>🏨 ${name}</b>`).openPopup();
+                            markers.push(m);
+                            document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
+                        } else {
+                            alert(`Could not find "${name}" on the map. Try a different accommodation.`);
+                        }
+                    });
             }
-        });
+        })
+        .catch(() => { alert(`Map search failed for "${name}". Check your connection.`); });
 }
 
 // ===== IMAGE (with harmful input check) =====
@@ -862,10 +886,18 @@ async function fetchAccommodations(inputs) {
         accoms.forEach((a, i) => {
             const imgUrl = imageUrls[i] || `https://placehold.co/400x300/0057a0/white?text=${encodeURIComponent(a.name)}`;
             const url = a.url || '#';
-            html += `<div class="accom-card" onclick="showAccomOnMap('${a.name.replace(/'/g,"\\'")}','${(a.address||'').replace(/'/g,"\\'")}')" title="Click to show on map"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source} · 📍 Show on map</div></div></div>`;
+            html += `<div class="accom-card" data-accom-name="${a.name}" data-accom-city="${a.address || inputs.city || inputs.state}"><img src="${imgUrl}" alt="${a.name}" loading="lazy"><div class="accom-info"><h5>${a.name}</h5><div class="accom-rating">⭐ ${a.rating}/5 · ${a.type}</div><div class="accom-price">${a.price_range}/night</div><div class="accom-address">📍 ${a.address}</div><div class="accom-source">via ${a.source} · 📍 Click to show on map</div></div></div>`;
         });
         html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'accom-scroll\',220)">›</button></div>';
         panel.innerHTML = html;
+        // Add click handlers via event delegation
+        panel.querySelectorAll('.accom-card').forEach(card => {
+            card.addEventListener('click', () => {
+                const name = card.dataset.accomName;
+                const city = card.dataset.accomCity;
+                showAccomOnMap(name, city);
+            });
+        });
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
     finally { spinner.style.display = 'none'; }
 }
