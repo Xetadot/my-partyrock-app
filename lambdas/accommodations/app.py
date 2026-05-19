@@ -101,19 +101,20 @@ def handler(event, context):
         except (ValueError, json.JSONDecodeError):
             accommodations = []
 
-        # Geocode each accommodation using Photon, only keep found ones
-        validated = []
+        # Geocode each accommodation - return ALL, add coords when found
         for accom in accommodations:
-            coords = geocode_photon(accom.get("name", ""), location)
-            if coords:
-                accom["lat"] = coords[0]
-                accom["lng"] = coords[1]
-                validated.append(accom)
+            try:
+                coords = geocode_photon(accom.get("name", ""), location)
+                if coords:
+                    accom["lat"] = coords[0]
+                    accom["lng"] = coords[1]
+            except Exception:
+                pass
 
         return {
             "statusCode": 200,
             "headers": {**CORS_HEADERS, "Content-Type": "application/json"},
-            "body": json.dumps({"accommodations": validated}),
+            "body": json.dumps({"accommodations": accommodations}),
         }
     except Exception as e:
         return {
