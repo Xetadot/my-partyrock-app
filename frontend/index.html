@@ -1073,7 +1073,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const handle = document.getElementById('resizeHandle');
     const layout = document.querySelector('.results-layout');
     let isDragging = false;
-    const MIN_LEFT = 5, MAX_LEFT = 95, SNAP_MARGIN = 10;
+    const MIN_LEFT = 5, MAX_LEFT = 95, SNAP_MARGIN = 12;
     handle.addEventListener('mousedown', (e) => { isDragging = true; handle.classList.add('dragging'); e.preventDefault(); });
     document.addEventListener('mousemove', (e) => {
         if (!isDragging) return;
@@ -1081,40 +1081,42 @@ document.addEventListener('DOMContentLoaded', () => {
         const offset = e.clientX - rect.left;
         const total = rect.width;
         let leftPct = (offset / total) * 100;
-        // Clamp
         leftPct = Math.max(MIN_LEFT, Math.min(MAX_LEFT, leftPct));
         const rightPct = 100 - leftPct - 1;
         layout.style.gridTemplateColumns = `${leftPct}% 8px ${rightPct}%`;
-        // Collapse left column if dragged too far left
         const leftCol = document.querySelector('.results-column');
+        const rightCol = document.querySelector('.map-column');
         if (leftPct < SNAP_MARGIN) { leftCol.style.opacity = '0'; leftCol.style.overflow = 'hidden'; }
         else { leftCol.style.opacity = '1'; leftCol.style.overflow = 'visible'; }
-        // Collapse right column if dragged too far right
-        const rightCol = document.querySelector('.map-column');
         if (rightPct < SNAP_MARGIN) { rightCol.style.opacity = '0'; rightCol.style.overflow = 'hidden'; }
         else { rightCol.style.opacity = '1'; rightCol.style.overflow = 'visible'; }
-        map.invalidateSize();
+        if (map && map.resize) map.resize();
     });
     document.addEventListener('mouseup', () => {
         if (!isDragging) return;
         isDragging = false; handle.classList.remove('dragging');
-        // Snap back if too far left or right
-        const rect = layout.getBoundingClientRect();
         const cols = layout.style.gridTemplateColumns;
         const leftPct = parseFloat(cols);
+        const leftCol = document.querySelector('.results-column');
+        const rightCol = document.querySelector('.map-column');
         if (leftPct < SNAP_MARGIN) {
+            // Snap left: collapse all result cards
             layout.style.gridTemplateColumns = `${SNAP_MARGIN}% 8px ${100 - SNAP_MARGIN - 1}%`;
-            document.querySelector('.results-column').style.opacity = '0';
+            leftCol.style.opacity = '0';
+            leftCol.style.overflow = 'hidden';
+            leftCol.querySelectorAll('.result-card-body').forEach(b => b.classList.add('collapsed'));
+            leftCol.querySelectorAll('.toggle-icon').forEach(i => i.classList.add('collapsed'));
         } else if (leftPct > MAX_LEFT - SNAP_MARGIN) {
             layout.style.gridTemplateColumns = `${MAX_LEFT - SNAP_MARGIN}% 8px ${SNAP_MARGIN}%`;
-            document.querySelector('.map-column').style.opacity = '0';
+            rightCol.style.opacity = '0';
+            rightCol.style.overflow = 'hidden';
         } else {
-            document.querySelector('.results-column').style.opacity = '1';
-            document.querySelector('.results-column').style.overflow = 'visible';
-            document.querySelector('.map-column').style.opacity = '1';
-            document.querySelector('.map-column').style.overflow = 'visible';
+            leftCol.style.opacity = '1';
+            leftCol.style.overflow = 'visible';
+            rightCol.style.opacity = '1';
+            rightCol.style.overflow = 'visible';
         }
-        setTimeout(() => map.invalidateSize(), 300);
+        if (map && map.resize) setTimeout(() => map.resize(), 300);
     });
 });
 </script>
