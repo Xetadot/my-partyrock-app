@@ -342,6 +342,22 @@ Resources:
             Method: OPTIONS
 
   # ============================================================
+  # Amazon Location Service
+  # ============================================================
+  TravelMap:
+    Type: AWS::Location::Map
+    Properties:
+      MapName: SmartTravelMalaysiaMap
+      Configuration:
+        Style: VectorGrabStandardLight
+
+  TravelPlaceIndex:
+    Type: AWS::Location::PlaceIndex
+    Properties:
+      IndexName: SmartTravelMalaysiaPlaces
+      DataSource: Grab
+
+  # ============================================================
   # S3 Bucket for Frontend Static Website
   # ============================================================
   FrontendBucket:

@@ -1,7 +1,5 @@
 import json
 import boto3
-import urllib.request
-import urllib.parse
 
 BEDROCK_MODEL_ID = "global.anthropic.claude-haiku-4-5-20251001-v1:0"
 bedrock = boto3.client("bedrock-runtime", region_name="ap-southeast-5")
@@ -41,17 +39,19 @@ CORS_HEADERS = {
 
 
 def geocode_photon(name, city):
-    """Geocode using Photon (Komoot) - better for businesses/hotels."""
-    q = f"{name} {city} Malaysia"
+    """Geocode using AWS Location Service (GrabMaps)."""
+    location_client = boto3.client("location", region_name="ap-southeast-5")
+    q = f"{name}, {city}, Malaysia"
     try:
-        url = f"https://photon.komoot.io/api/?q={urllib.parse.quote(q)}&limit=1&lang=en"
-        req = urllib.request.Request(url, headers={"User-Agent": "SmartTravelMalaysia/1.0"})
-        with urllib.request.urlopen(req, timeout=5) as resp:
-            data = json.loads(resp.read())
-            if data.get("features") and len(data["features"]) > 0:
-                coords = data["features"][0]["geometry"]["coordinates"]
-                # Photon returns [lng, lat]
-                return coords[1], coords[0]
+        response = location_client.search_place_index_for_text(
+            IndexName="SmartTravelMalaysiaPlaces",
+            Text=q,
+            MaxResults=1,
+        )
+        results = response.get("Results", [])
+        if results:
+            coords = results[0]["Place"]["Geometry"]["Point"]
+            return coords[1], coords[0]
     except Exception:
         pass
     return None
