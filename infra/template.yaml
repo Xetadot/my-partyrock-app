@@ -325,6 +325,7 @@ Resources:
     Properties:
       CodeUri: ../lambdas/accommodations/
       Handler: app.handler
+      Timeout: 90
       Role: !GetAtt AppBedrockRole.Arn
       Events:
         Post:
