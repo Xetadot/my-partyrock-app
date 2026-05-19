@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STM Smart Travel Malaysia</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
-    <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Poppins',sans-serif;color:#333;background:#f5f7fa}
@@ -358,7 +358,6 @@ const ENDPOINTS = {
     travel_moments: API_BASE + '/moments',
     travel_summary: API_BASE + '/summary',
     accommodations: API_BASE + '/accommodations',
-    places_search: API_BASE + '/places',
 };
 
 // ===== HARMFUL INPUT FILTER =====
@@ -511,71 +510,40 @@ function closeMomentVideo() {
     activeMoment = null;
 }
 
-// ===== MAP (Amazon Location Service + MapLibre) =====
+// ===== MAP =====
 let map, markers = [], currentFilter = 'all';
 function initMap() {
-    // Use OpenStreetMap raster tiles (free, no auth needed) with MapLibre
-    map = new maplibregl.Map({
-        container: 'map',
-        style: { version: 8, sources: { osm: { type: 'raster', tiles: ['https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}@2x.png'], tileSize: 256, attribution: '© OpenStreetMap, © CARTO' } }, layers: [{ id: 'osm', type: 'raster', source: 'osm' }] },
-        center: [101.5183, 3.0738],
-        zoom: 11,
-    });
-    map.addControl(new maplibregl.NavigationControl(), 'top-right');
+    map = L.map('map').setView(STATE_COORDS['Selangor'], 12);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { attribution: '© OpenStreetMap contributors, © CARTO', maxZoom: 19, subdomains: 'abcd' }).addTo(map);
 }
 function updateMap(state) {
     const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
-    map.flyTo({ center: [coords[1], coords[0]], zoom: 12 });
+    map.setView(coords, 13);
+    showRoute(state);
+    filterMap('all', document.querySelector('.map-filter-btn'));
 }
 function showRoute(state) {
-    updateMap(state);
+    // Just center the map, no route line
+    const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
+    map.setView(coords, 13);
 }
 function filterMap(category, btn) {
     currentFilter = category;
     document.querySelectorAll('.map-filter-btn').forEach(b => b.classList.remove('active'));
     if (btn) btn.classList.add('active');
-    clearMarkers();
-    // Use places search for the selected category
+    markers.forEach(m => map.removeLayer(m)); markers = [];
     const state = document.getElementById('state').value;
-    const city = document.getElementById('city').value || state;
-    const categoryQueries = { all: city + ' tourism', attractions: city + ' attraction', hotels: city + ' hotel', food: city + ' restaurant halal', shopping: city + ' shopping mall', transport: city + ' bus station train' };
-    const query = categoryQueries[category] || city;
-    searchAndPin(query + ' Malaysia');
-}
-function clearMarkers() {
-    markers.forEach(m => m.remove());
-    markers = [];
-}
-
-// Search places via our Lambda (Amazon Location Service)
-async function searchAndPin(query) {
-    try {
-        const state = document.getElementById('state').value;
-        const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
-        const r = await fetch(ENDPOINTS.places_search, {
-            method: 'POST', headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ query, lat: coords[0], lng: coords[1] })
+    const pois = POI_DATA[state];
+    if (!pois) { const c = STATE_COORDS[state]||STATE_COORDS['Selangor']; markers.push(L.marker(c).addTo(map).bindPopup(`<b>${state}</b>`)); return; }
+    const icons = {attractions:'🏛️',hotels:'🏨',food:'🍜',shopping:'🛍️',transport:'🚌'};
+    const cats = category === 'all' ? Object.keys(icons) : [category];
+    cats.forEach(cat => {
+        (pois[cat]||[]).forEach(poi => {
+            const icon = L.divIcon({html:`<div style="font-size:1.4rem;text-align:center">${icons[cat]}</div>`,iconSize:[28,28],className:''});
+            markers.push(L.marker([poi.lat,poi.lng],{icon}).addTo(map).bindPopup(`<b>${icons[cat]} ${poi.name}</b><br><em>${cat}</em>`));
         });
-        if (!r.ok) return;
-        const data = await r.json();
-        if (data.results && data.results.length > 0) {
-            const p = data.results[0];
-            addMarker(p.lat, p.lng, p.name, '📍');
-            map.flyTo({ center: [p.lng, p.lat], zoom: 15 });
-        }
-    } catch(e) {}
-}
-
-function addMarker(lat, lng, title, emoji) {
-    const el = document.createElement('div');
-    el.style.cssText = 'background:#0057a0;color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.8rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3);cursor:pointer';
-    el.textContent = emoji || '📍';
-    const marker = new maplibregl.Marker({ element: el })
-        .setLngLat([lng, lat])
-        .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`<strong>${title}</strong>`))
-        .addTo(map);
-    markers.push(marker);
-    return marker;
+    });
+    if (markers.length > 1) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.1));
 }
 
 // ===== CARD TOGGLE =====
@@ -654,6 +622,7 @@ async function fetchToPanel(url, body, panelId, spinnerId) {
 }
 
 // ===== ITINERARY (sub-widgets per day) =====
+let itineraryRoute = null;
 async function fetchItinerary(inputs) {
     const panel = document.getElementById('output-itinerary'), spinner = document.getElementById('spinner-itinerary');
     panel.innerHTML = ''; panel.classList.remove('collapsed'); spinner.style.display = 'block';
@@ -749,46 +718,44 @@ function showDay(index) {
 }
 
 function drawDayRoute(dayIndex) {
-    clearMarkers();
+    // Clear previous markers
+    if (itineraryRoute) { map.removeLayer(itineraryRoute); itineraryRoute = null; }
+    markers.forEach(m => map.removeLayer(m)); markers = [];
     if (!window.itineraryLocations || window.itineraryLocations.length === 0) return;
     const totalDays = document.querySelectorAll('.day-tab').length || 1;
     const perDay = Math.ceil(window.itineraryLocations.length / totalDays);
     const start = dayIndex * perDay;
     const dayPoints = window.itineraryLocations.slice(start, start + perDay);
     if (dayPoints.length === 0) return;
-    const bounds = new maplibregl.LngLatBounds();
     dayPoints.forEach((p, i) => {
         if (!p.lat || !p.lng) return;
-        const el = document.createElement('div');
-        el.style.cssText = 'background:#0057a0;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3)';
-        el.textContent = i + 1;
-        const marker = new maplibregl.Marker({ element: el })
-            .setLngLat([p.lng, p.lat])
-            .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`<strong>${i+1}. ${p.name}</strong><br><span style="font-size:0.75rem">${p.category} · ${p.city}</span>`))
-            .addTo(map);
-        markers.push(marker);
-        bounds.extend([p.lng, p.lat]);
+        const icon = L.divIcon({ html: `<div style="background:#0057a0;color:#fff;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${i+1}</div>`, iconSize: [26,26], className: '' });
+        const m = L.marker([p.lat, p.lng], { icon }).addTo(map);
+        m.bindPopup(`<div style="min-width:160px;font-family:Poppins,sans-serif"><strong style="font-size:0.85rem">${i+1}. ${p.name}</strong><br><span style="font-size:0.72rem;color:#666">📍 ${p.category} · ${p.city}</span></div>`);
+        markers.push(m);
     });
-    if (markers.length > 1) map.fitBounds(bounds, { padding: 50 });
-    else if (markers.length === 1 && dayPoints[0].lat) map.flyTo({ center: [dayPoints[0].lng, dayPoints[0].lat], zoom: 14 });
+    if (markers.length > 1) map.fitBounds(L.featureGroup(markers).getBounds().pad(0.2));
+    else if (markers.length === 1 && dayPoints[0].lat) map.setView([dayPoints[0].lat, dayPoints[0].lng], 14);
 }
 
-// Geocode locations using Amazon Location Service (via Lambda)
+// Geocode locations using Photon (Komoot) - better for businesses
 async function geocodeLocations(locations, state) {
     const results = [];
-    const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
     for (const loc of locations) {
         try {
-            const r = await fetch(ENDPOINTS.places_search, {
-                method: 'POST', headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ query: loc.name + ' ' + (loc.city || state) + ' Malaysia', lat: coords[0], lng: coords[1] })
-            });
-            const data = await r.json();
-            if (data.results && data.results.length > 0) {
-                results.push({ ...loc, lat: data.results[0].lat, lng: data.results[0].lng });
-            } else { results.push(loc); }
-            await new Promise(r => setTimeout(r, 200));
-        } catch(e) { results.push(loc); }
+            const query = encodeURIComponent(loc.name + ' ' + (loc.city || state) + ' Malaysia');
+            const res = await fetch(`https://photon.komoot.io/api/?q=${query}&limit=1&lang=en`);
+            const data = await res.json();
+            if (data.features && data.features.length > 0) {
+                const coords = data.features[0].geometry.coordinates;
+                results.push({ ...loc, lat: coords[1], lng: coords[0] });
+            } else {
+                results.push(loc);
+            }
+            await new Promise(r => setTimeout(r, 300));
+        } catch(e) {
+            results.push(loc);
+        }
     }
     return results;
 }
@@ -806,21 +773,45 @@ function parseLocationsFromItinerary(text) {
 }
 
 // Show accommodation on map
-function showAccomOnMap(name, lat, lng) {
-    if (lat && lng) {
-        clearMarkers();
-        map.flyTo({ center: [lng, lat], zoom: 16 });
-        const el = document.createElement('div');
-        el.style.cssText = 'background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)';
-        el.textContent = '🏨';
-        const marker = new maplibregl.Marker({ element: el })
-            .setLngLat([lng, lat])
-            .setPopup(new maplibregl.Popup({ offset: 25 }).setHTML(`<strong>🏨 ${name}</strong>`))
-            .addTo(map);
-        marker.togglePopup();
-        markers.push(marker);
-        document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
-    }
+function showAccomOnMap(name, city) {
+    const query = encodeURIComponent(name + ', ' + city + ', Malaysia');
+    // Show loading state
+    const mapEl = document.getElementById('map');
+    mapEl.style.outline = '3px solid #0057a0';
+    setTimeout(() => { mapEl.style.outline = 'none'; }, 2000);
+
+    fetch(`https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1&countrycodes=my`)
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+                map.setView([lat, lng], 16);
+                markers.forEach(m => map.removeLayer(m)); markers = [];
+                const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)">🏨</div>', iconSize: [32,32], className: '' });
+                const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<div style="font-family:Poppins,sans-serif"><strong>🏨 ${name}</strong><br><span style="font-size:0.75rem;color:#666">${city}</span></div>`).openPopup();
+                markers.push(m);
+                // Scroll to map
+                document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
+            } else {
+                // Fallback: try without country code
+                fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(name + ' Malaysia')}&format=json&limit=1`)
+                    .then(r => r.json())
+                    .then(data2 => {
+                        if (data2 && data2.length > 0) {
+                            const lat = parseFloat(data2[0].lat), lng = parseFloat(data2[0].lon);
+                            map.setView([lat, lng], 15);
+                            markers.forEach(m => map.removeLayer(m)); markers = [];
+                            const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)">🏨</div>', iconSize: [32,32], className: '' });
+                            const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<b>🏨 ${name}</b>`).openPopup();
+                            markers.push(m);
+                            document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
+                        } else {
+                            alert(`Could not find "${name}" on the map. Try a different accommodation.`);
+                        }
+                    });
+            }
+        })
+        .catch(() => { alert(`Map search failed for "${name}". Check your connection.`); });
 }
 
 // ===== IMAGE (with harmful input check) =====
@@ -908,12 +899,20 @@ async function fetchAccommodations(inputs) {
         });
         html += '</div><button class="widget-slider-btn right" onclick="scrollSlider(\'accom-scroll\',220)">›</button></div>';
         panel.innerHTML = html;
+        // Add click handlers - use pre-geocoded coordinates
         panel.querySelectorAll('.accom-card').forEach(card => {
             card.addEventListener('click', () => {
                 const name = card.dataset.accomName;
                 const lat = parseFloat(card.dataset.accomLat);
                 const lng = parseFloat(card.dataset.accomLng);
-                showAccomOnMap(name, lat, lng);
+                if (lat && lng) {
+                    map.setView([lat, lng], 16);
+                    markers.forEach(m => map.removeLayer(m)); markers = [];
+                    const icon = L.divIcon({ html: '<div style="background:#e53935;color:#fff;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;box-shadow:0 3px 10px rgba(0,0,0,0.3)">🏨</div>', iconSize: [32,32], className: '' });
+                    const m = L.marker([lat, lng], { icon }).addTo(map).bindPopup(`<div style="font-family:Poppins,sans-serif"><strong>🏨 ${name}</strong></div>`).openPopup();
+                    markers.push(m);
+                    document.querySelector('.map-column').scrollIntoView({behavior:'smooth', block:'center'});
+                }
             });
         });
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
@@ -1025,7 +1024,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const rightCol = document.querySelector('.map-column');
         if (rightPct < SNAP_MARGIN) { rightCol.style.opacity = '0'; rightCol.style.overflow = 'hidden'; }
         else { rightCol.style.opacity = '1'; rightCol.style.overflow = 'visible'; }
-        map.resize();
+        map.invalidateSize();
     });
     document.addEventListener('mouseup', () => {
         if (!isDragging) return;
@@ -1046,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.querySelector('.map-column').style.opacity = '1';
             document.querySelector('.map-column').style.overflow = 'visible';
         }
-        setTimeout(() => map.resize(), 300);
+        setTimeout(() => map.invalidateSize(), 300);
     });
 });
 </script>
