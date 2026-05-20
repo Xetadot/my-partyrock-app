@@ -691,13 +691,9 @@ async function fetchItinerary(inputs) {
         } else {
             renderItineraryDays(panel, days);
         }
-        // Geocode locations in background
+        // Locations parsed but not linked to map
         if (locations.length > 0) {
-            const state = inputs.state;
-            geocodeLocations(locations, state).then(geoLocs => {
-                window.itineraryLocations = geoLocs;
-                drawDayRoute(0);
-            });
+            window.itineraryLocations = locations;
         }
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
     finally { spinner.style.display = 'none'; }
@@ -1098,24 +1094,44 @@ function downloadPDF() {
     btn.textContent = '⏳ Generating PDF...';
     btn.disabled = true;
 
-    // Clone the results section for PDF
-    const resultsEl = document.querySelector('.results-column');
-    const clone = resultsEl.cloneNode(true);
-    // Expand all collapsed cards in clone
-    clone.querySelectorAll('.result-card-body.collapsed').forEach(b => b.classList.remove('collapsed'));
-    // Create a wrapper with styling
+    // Build PDF content from actual rendered widget content
+    const state = document.getElementById('state').value;
+    const city = document.getElementById('city').value;
     const wrapper = document.createElement('div');
-    wrapper.style.cssText = 'font-family:Poppins,sans-serif;padding:20px;max-width:800px;color:#333';
-    wrapper.innerHTML = `<h1 style="color:#0057a0;font-size:1.5rem;margin-bottom:10px">🇲🇾 Smart Travel Malaysia</h1><p style="font-size:0.8rem;color:#666;margin-bottom:20px">Generated on ${new Date().toLocaleDateString()} · ${document.getElementById('state').value}${document.getElementById('city').value ? ', ' + document.getElementById('city').value : ''}</p>`;
-    wrapper.appendChild(clone);
+    wrapper.style.cssText = 'font-family:Arial,sans-serif;padding:20px;max-width:750px;color:#333;font-size:12px;line-height:1.6';
+
+    // Header
+    wrapper.innerHTML = `<h1 style="color:#0057a0;font-size:22px;margin-bottom:5px">🇲🇾 Smart Travel Malaysia</h1>
+        <p style="font-size:11px;color:#666;margin-bottom:20px">Generated: ${new Date().toLocaleDateString()} · Destination: ${state}${city ? ', ' + city : ''}</p><hr style="border:1px solid #eee;margin-bottom:15px">`;
+
+    // Collect content from each widget
+    const widgets = [
+        {id: 'output-budget', title: '💰 Budget Analysis'},
+        {id: 'output-overview', title: '🌍 Travel Overview'},
+        {id: 'output-transport', title: '🚇 Transport & Accessibility'},
+        {id: 'output-government', title: '🏛️ Government Services'},
+        {id: 'output-cost', title: '📊 Cost Breakdown'},
+        {id: 'output-itinerary', title: '📅 Detailed Itinerary'},
+        {id: 'output-subsidies', title: '🎫 Subsidies & Benefits'},
+        {id: 'output-safety', title: '🛡️ Safety & Tips'},
+        {id: 'output-summary', title: '📋 Trip Summary'},
+        {id: 'output-references', title: '📚 References'},
+    ];
+
+    widgets.forEach(w => {
+        const el = document.getElementById(w.id);
+        if (el && el.innerHTML.trim()) {
+            wrapper.innerHTML += `<h2 style="color:#0057a0;font-size:14px;margin:18px 0 8px;border-bottom:1px solid #eee;padding-bottom:5px">${w.title}</h2>`;
+            wrapper.innerHTML += `<div style="font-size:11px;line-height:1.7">${el.innerHTML}</div>`;
+        }
+    });
 
     const opt = {
         margin: [10, 10, 10, 10],
-        filename: `STM_TravelPlan_${document.getElementById('state').value.replace(/\s/g,'_')}.pdf`,
-        image: { type: 'jpeg', quality: 0.95 },
-        html2canvas: { scale: 2, useCORS: true, logging: false },
+        filename: `STM_TravelPlan_${state.replace(/\s/g,'_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.9 },
+        html2canvas: { scale: 1.5, useCORS: true, logging: false },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
     };
 
     html2pdf().set(opt).from(wrapper).save().then(() => {

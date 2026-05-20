@@ -61,13 +61,17 @@ def handler(event, context):
     agoda_city_id = get_agoda_city_id(location, state)
 
     # Use Converse API with web search tool
-    system_prompt = f"""You are a hotel search assistant. Search the web for REAL hotels currently available in {location}, Malaysia.
+    system_prompt = f"""You are a hotel search assistant. Search the web for REAL hotels currently available in {location}, {state}, Malaysia.
+
+CRITICAL: Hotels MUST be located in {location}, {state}. Do NOT return hotels from other cities or states.
 
 RULES:
-- Search ONCE for "best hotels {location} Malaysia 2025 Agoda" — do NOT search multiple times
-- Return ONLY hotels that appear in your search results (real, verified hotels)
+- Search ONCE for "hotels in {location} {state} Malaysia 2025" — do NOT search multiple times
+- Return ONLY hotels that are physically located in {location}, {state}
+- If a hotel is in Kuala Lumpur but user asked for Penang, DO NOT include it
 - Return exactly 5 hotels as a JSON array
 - Mix budget and luxury options
+- Double-check: every hotel must be in {location}
 
 Each hotel object must have:
 - "name": exact hotel name from search results
@@ -85,7 +89,7 @@ Return ONLY the JSON array, nothing else. Example:
             system=[{"text": system_prompt}],
             messages=[{
                 "role": "user",
-                "content": [{"text": f"Search for 5 real hotels in {location}, Malaysia. Budget: RM{budget}. Return JSON array only."}]
+                "content": [{"text": f"Search for 5 real hotels ONLY in {location}, {state}, Malaysia. NOT in KL or other cities. Budget: RM{budget}. Return JSON array only."}]
             }],
             toolConfig={
                 "tools": [{
@@ -129,8 +133,8 @@ Return ONLY the JSON array, nothing else. Example:
                 body=json.dumps({
                     "anthropic_version": "bedrock-2023-05-31",
                     "max_tokens": 2000,
-                    "system": [{"type": "text", "text": f"List 5 real, well-known hotels in {location}, Malaysia. Return ONLY a JSON array with objects having: name, type, rating, price_range, address. Use real hotel names only."}],
-                    "messages": [{"role": "user", "content": f"5 real hotels in {location} Malaysia, budget RM{budget}. JSON array only."}],
+                    "system": [{"type": "text", "text": f"List 5 real, well-known hotels ONLY in {location}, {state}, Malaysia. NOT hotels from other cities. Return ONLY a JSON array with objects having: name, type, rating, price_range, address. Use real hotel names only."}],
+                    "messages": [{"role": "user", "content": f"5 real hotels in {location}, {state}, Malaysia only. Budget RM{budget}. JSON array only."}],
                 }),
             )
             fb_result = json.loads(fallback_response["body"].read())
