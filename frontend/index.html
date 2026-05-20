@@ -921,8 +921,19 @@ async function fetchAccommodations(inputs) {
         // Add click handlers - use pre-geocoded coordinates
         panel.querySelectorAll('.accom-card').forEach(card => {
             card.addEventListener('click', () => {
-                const url = card.dataset.accomUrl;
-                if (url) window.open(url, '_blank');
+                const name = card.dataset.accomName;
+                const city = document.getElementById('city').value || document.getElementById('state').value;
+                // Search and pin on map using Photon
+                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(name + ' ' + city + ' Malaysia')}&limit=1&lang=en`)
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.features && data.features.length > 0) {
+                            const coords = data.features[0].geometry.coordinates;
+                            clearMarkers();
+                            map.flyTo({ center: coords, zoom: 16 });
+                            addMarker(coords[1], coords[0], '🏨 ' + name, '🏨', '#e53935');
+                        }
+                    }).catch(() => {});
             });
         });
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }
