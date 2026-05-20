@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
     <script src="https://unpkg.com/@aws/amazon-location-utilities-auth-helper@1.0.7/dist/amazonLocationAuthHelper.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Poppins',sans-serif;color:#333;background:#f5f7fa}
@@ -224,6 +225,7 @@
         </div>
         <button class="topbar-btn" onclick="toggleSection('places')">📍 Places</button>
         <button class="topbar-btn" onclick="toggleSection('moments')">📸 Moments</button>
+        <button class="topbar-btn" id="downloadBtn" onclick="downloadPDF()">📥 Download</button>
     </div>
 </nav>
 
@@ -1045,6 +1047,7 @@ function populateReferences(summaryData) {
 
 // ===== RUN ALL =====
 function runAll() {
+    generationComplete = false;
     const btn = document.getElementById('btnRunAll');
     btn.disabled = true; btn.textContent = '⏳ Generating...';
     const inputs = getInputs();
@@ -1058,6 +1061,7 @@ function runAll() {
         await Promise.allSettled([fetchToPanel(ENDPOINTS.budget_analysis_and_recommendations,inputs,'output-budget','spinner-budget'),fetchToPanel(ENDPOINTS.travel_overview,inputs,'output-overview','spinner-overview'),fetchToPanel(ENDPOINTS.transport_and_accessibility,inputs,'output-transport','spinner-transport')]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.estimated_cost_breakdown,inputs,'output-cost','spinner-cost'),fetchItinerary(inputs),fetchToPanel(ENDPOINTS.government_services_and_entry_requirements,inputs,'output-government','spinner-government')]);
         await Promise.allSettled([fetchToPanel(ENDPOINTS.government_travel_subsidies_and_benefits,inputs,'output-subsidies','spinner-subsidies'),fetchToPanel(ENDPOINTS.safety_legal_and_traveler_tips,inputs,'output-safety','spinner-safety'),fetchSummary(inputs)]);
+        generationComplete = true;
         btn.disabled = false; btn.textContent = '🚀 Generate Travel Plan';
     }
     go();
@@ -1075,6 +1079,52 @@ async function sendChat(){
     const ab=document.createElement('div');ab.className='chat-bubble assistant';ab.innerHTML='<em>Thinking...</em>';md.appendChild(ab);md.scrollTop=md.scrollHeight;
     try{const r=await fetch(ENDPOINTS.chat_with_local_malaysian_friend,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({state:document.getElementById('state').value,message,history:chatHistory.slice(0,-1)})});if(!r.ok)throw new Error(`HTTP ${r.status}`);const t=await r.text();ab.innerHTML=fmt(t.replace(/\n/g,'<br>'));chatHistory.push({role:'assistant',content:t})}
     catch(e){ab.innerHTML=`<span class="error-msg">${e.message}</span>`}finally{sb.disabled=false;md.scrollTop=md.scrollHeight;input.focus()}
+}
+
+// ===== DOWNLOAD PDF =====
+let generationComplete = false;
+
+function downloadPDF() {
+    const btn = document.getElementById('downloadBtn');
+    if (!generationComplete) {
+        btn.textContent = '⏳ Output not yet finished';
+        btn.style.minWidth = '180px';
+        setTimeout(() => {
+            btn.textContent = '📥 Download';
+            btn.style.minWidth = '';
+        }, 3000);
+        return;
+    }
+    btn.textContent = '⏳ Generating PDF...';
+    btn.disabled = true;
+
+    // Clone the results section for PDF
+    const resultsEl = document.querySelector('.results-column');
+    const clone = resultsEl.cloneNode(true);
+    // Expand all collapsed cards in clone
+    clone.querySelectorAll('.result-card-body.collapsed').forEach(b => b.classList.remove('collapsed'));
+    // Create a wrapper with styling
+    const wrapper = document.createElement('div');
+    wrapper.style.cssText = 'font-family:Poppins,sans-serif;padding:20px;max-width:800px;color:#333';
+    wrapper.innerHTML = `<h1 style="color:#0057a0;font-size:1.5rem;margin-bottom:10px">🇲🇾 Smart Travel Malaysia</h1><p style="font-size:0.8rem;color:#666;margin-bottom:20px">Generated on ${new Date().toLocaleDateString()} · ${document.getElementById('state').value}${document.getElementById('city').value ? ', ' + document.getElementById('city').value : ''}</p>`;
+    wrapper.appendChild(clone);
+
+    const opt = {
+        margin: [10, 10, 10, 10],
+        filename: `STM_TravelPlan_${document.getElementById('state').value.replace(/\s/g,'_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] },
+    };
+
+    html2pdf().set(opt).from(wrapper).save().then(() => {
+        btn.textContent = '📥 Download';
+        btn.disabled = false;
+    }).catch(() => {
+        btn.textContent = '📥 Download';
+        btn.disabled = false;
+    });
 }
 
 // ===== INIT =====
