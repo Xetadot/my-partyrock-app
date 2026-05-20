@@ -50,6 +50,12 @@ Resources:
                   - aws-marketplace:Subscribe
                   - aws-marketplace:Unsubscribe
                 Resource: "*"
+              - Effect: Allow
+                Action:
+                  - geo:SearchPlaceIndex*
+                  - geo:GetPlace
+                  - geo:GetMap*
+                Resource: "*"
 
   # ============================================================
   # API Gateway
