@@ -357,6 +357,26 @@ Resources:
       IndexName: SmartTravelMalaysiaPlaces
       DataSource: Grab
 
+  PlacesSearchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ../lambdas/places_search/
+      Handler: app.handler
+      Role: !GetAtt AppBedrockRole.Arn
+      Events:
+        Post:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /places
+            Method: POST
+        Options:
+          Type: Api
+          Properties:
+            RestApiId: !Ref AppApi
+            Path: /places
+            Method: OPTIONS
+
   # ============================================================
   # S3 Bucket for Frontend Static Website
   # ============================================================

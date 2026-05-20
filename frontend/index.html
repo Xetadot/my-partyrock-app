@@ -360,6 +360,7 @@ const ENDPOINTS = {
     travel_moments: API_BASE + '/moments',
     travel_summary: API_BASE + '/summary',
     accommodations: API_BASE + '/accommodations',
+    places: API_BASE + '/places',
 };
 
 // ===== HARMFUL INPUT FILTER =====
@@ -575,19 +576,20 @@ async function filterMap(category, btn) {
     const city = document.getElementById('city').value || state;
     const queries = { all: city + ' Malaysia', attractions: city + ' attraction Malaysia', hotels: city + ' hotel Malaysia', food: city + ' restaurant Malaysia', shopping: city + ' mall Malaysia', transport: city + ' station Malaysia' };
     const query = queries[category] || city + ' Malaysia';
-    // Use Photon as fallback for filter search (client-side, no auth needed)
     try {
-        const res = await fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&limit=5&lang=en`);
-        const data = await res.json();
-        if (data.features && data.features.length > 0) {
+        const r = await fetch(ENDPOINTS.places, {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ query: query })
+        });
+        const data = await r.json();
+        if (data.results && data.results.length > 0) {
             const bounds = new maplibregl.LngLatBounds();
-            data.features.forEach((f, i) => {
-                const coords = f.geometry.coordinates;
-                const name = f.properties.name || query;
-                addMarker(coords[1], coords[0], name, (i+1).toString());
-                bounds.extend(coords);
+            data.results.forEach((p, i) => {
+                addMarker(p.lat, p.lng, p.name, (i+1).toString());
+                bounds.extend([p.lng, p.lat]);
             });
             if (markers.length > 1) map.fitBounds(bounds, { padding: 50 });
+            else map.flyTo({ center: [data.results[0].lng, data.results[0].lat], zoom: 14 });
         }
     } catch(e) {}
 }
@@ -782,19 +784,20 @@ function drawDayRoute(dayIndex) {
     else if (markers.length === 1 && dayPoints[0].lat) map.flyTo({ center: [dayPoints[0].lng, dayPoints[0].lat], zoom: 14 });
 }
 
-// Geocode locations using Photon (client-side fallback)
+// Geocode locations using AWS Location Service
 async function geocodeLocations(locations, state) {
     const results = [];
     for (const loc of locations) {
         try {
-            const query = encodeURIComponent(loc.name + ' ' + (loc.city || state) + ' Malaysia');
-            const res = await fetch(`https://photon.komoot.io/api/?q=${query}&limit=1&lang=en`);
-            const data = await res.json();
-            if (data.features && data.features.length > 0) {
-                const coords = data.features[0].geometry.coordinates;
-                results.push({ ...loc, lat: coords[1], lng: coords[0] });
+            const r = await fetch(ENDPOINTS.places, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ query: loc.name + ' ' + (loc.city || state) + ' Malaysia' })
+            });
+            const data = await r.json();
+            if (data.results && data.results.length > 0) {
+                results.push({ ...loc, lat: data.results[0].lat, lng: data.results[0].lng });
             } else { results.push(loc); }
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 200));
         } catch(e) { results.push(loc); }
     }
     return results;
@@ -923,17 +926,17 @@ async function fetchAccommodations(inputs) {
             card.addEventListener('click', () => {
                 const name = card.dataset.accomName;
                 const city = document.getElementById('city').value || document.getElementById('state').value;
-                // Search and pin on map using Photon
-                fetch(`https://photon.komoot.io/api/?q=${encodeURIComponent(name + ' ' + city + ' Malaysia')}&limit=1&lang=en`)
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.features && data.features.length > 0) {
-                            const coords = data.features[0].geometry.coordinates;
-                            clearMarkers();
-                            map.flyTo({ center: coords, zoom: 16 });
-                            addMarker(coords[1], coords[0], '🏨 ' + name, '🏨', '#e53935');
-                        }
-                    }).catch(() => {});
+                // Search via AWS Location Service
+                fetch(ENDPOINTS.places, {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({ query: name + ' ' + city + ' Malaysia' })
+                }).then(r => r.json()).then(data => {
+                    if (data.results && data.results.length > 0) {
+                        clearMarkers();
+                        map.flyTo({ center: [data.results[0].lng, data.results[0].lat], zoom: 16 });
+                        addMarker(data.results[0].lat, data.results[0].lng, '🏨 ' + name, '🏨', '#e53935');
+                    }
+                }).catch(() => {});
             });
         });
     } catch(e) { panel.innerHTML = `<span class="error-msg">⚠️ ${e.message}</span>`; }

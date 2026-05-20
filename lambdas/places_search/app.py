@@ -32,9 +32,8 @@ def handler(event, context):
         response = location_client.search_place_index_for_text(
             IndexName=INDEX_NAME,
             Text=query,
-            MaxResults=1,
+            MaxResults=5,
             BiasPosition=[bias_lng, bias_lat],
-            FilterCountries=["MYS"],
         )
 
         results = []
