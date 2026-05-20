@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>STM Smart Travel Malaysia</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇲🇾</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.css">
     <script src="https://unpkg.com/maplibre-gl@3.6.2/dist/maplibre-gl.js"></script>
@@ -924,10 +925,12 @@ async function fetchAccommodations(inputs) {
             card.addEventListener('click', () => {
                 const name = card.dataset.accomName;
                 const city = document.getElementById('city').value || document.getElementById('state').value;
-                // Search via AWS Location Service
+                const state = document.getElementById('state').value;
+                const coords = STATE_COORDS[state] || STATE_COORDS['Selangor'];
+                // Search via AWS Location Service with location bias
                 fetch(ENDPOINTS.places, {
                     method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({ query: name + ' ' + city + ' Malaysia' })
+                    body: JSON.stringify({ query: name + ', ' + city + ', ' + state, lat: coords[0], lng: coords[1] })
                 }).then(r => r.json()).then(data => {
                     if (data.results && data.results.length > 0) {
                         clearMarkers();
